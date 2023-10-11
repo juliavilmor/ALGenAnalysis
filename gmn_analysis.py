@@ -87,7 +87,12 @@ def create_table_gmn_counts(results_dir, save_df=False):
                         counts_success[ntrial] = rate
 
     # put into a dataframe
-    counts_dic = dict([(k,[counts_specific[k],counts_generated[k], counts_threshold[k], counts_success[k]]) for k in counts_specific])
+    try:
+        counts_dic = dict([(k,[counts_specific[k],counts_generated[k], counts_threshold[k], counts_success[k]]) for k in counts_specific])
+    except:
+        counts_specific = dict(sorted(counts_specific.items()))
+        counts_specific.popitem()
+        counts_dic = dict([(k,[counts_specific[k],counts_generated[k], counts_threshold[k], counts_success[k]]) for k in counts_specific])
     counts_dic = dict(sorted(counts_dic.items()))
     index_labels = ['specific_set', 'generated_set', 'thresholds', 'success_rate(%)']
     df = pd.DataFrame(counts_dic, index=index_labels)
@@ -281,10 +286,10 @@ def _simplify_specific_sets(results_dir):
     specifics.append(specific_6)
     specific_7 = smiles['8'] - smiles['7']
     specifics.append(specific_7)
-    specific_8 = smiles['9'] - smiles['8']
-    specifics.append(specific_8)
-    specific_9 = smiles['10'] - smiles['9']
-    specifics.append(specific_9)
+    #specific_8 = smiles['9'] - smiles['8']
+    #specifics.append(specific_8)
+    #specific_9 = smiles['10'] - smiles['9']
+    #specifics.append(specific_9)
 
     for i, specific in enumerate(specifics):
         new_file = open('%s/smi_files/simp_specific_%d.smi'%(results_dir, i), 'w')
@@ -304,15 +309,15 @@ def plot_specific_simplified_sets_tSNE(results_dir):
     specific_5 = mollib.MolDB(smiDB='%s/smi_files/simp_specific_5.smi'%results_dir, verbose=False)
     specific_6 = mollib.MolDB(smiDB='%s/smi_files/simp_specific_6.smi'%results_dir, verbose=False)
     specific_7 = mollib.MolDB(smiDB='%s/smi_files/simp_specific_7.smi'%results_dir, verbose=False)
-    specific_8 = mollib.MolDB(smiDB='%s/smi_files/simp_specific_8.smi'%results_dir, verbose=False)
-    specific_9 = mollib.MolDB(smiDB='%s/smi_files/simp_specific_9.smi'%results_dir, verbose=False)
+    #specific_8 = mollib.MolDB(smiDB='%s/smi_files/simp_specific_8.smi'%results_dir, verbose=False)
+    #specific_9 = mollib.MolDB(smiDB='%s/smi_files/simp_specific_9.smi'%results_dir, verbose=False)
 
-    plot_colors = mcp.gen_color(cmap="YlGnBu", n=11)
-    plot_colors = plot_colors[1:11]
-    sizes = [0.5,0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.6]
-    alphas = [0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9]
-    linewidths = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-    markers = ["o", "o", "o", "o", "o", "o", "o", "o", "o", "*"]
+    plot_colors = mcp.gen_color(cmap="YlGnBu", n=9)
+    plot_colors = plot_colors[1:9]
+    sizes = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.6]
+    alphas = [0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9]
+    linewidths = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    markers = ["o", "o", "o", "o", "o", "o", "o", "*"]
 
     #plotlib.plot_tSNE(dbs=[specific_9, specific_8, specific_7, specific_6, specific_5, specific_4, specific_3, specific_2, specific_1, specific_0], names=['specific_9', 'specific_8', 'specific_7', 'specific_6', 'specific_5', 'specific_4', 'specific_3', 'specific_2', 'specific_1', 'specific_0'],output='%s/tSNE_specific_simp_sets'%results_dir, random_max = 10000, delimiter = None, fpsalg = 'Morgan4', colors = plot_colors, sizes=sizes, alphas=alphas, linewidths=linewidths, markers=markers, n_iter=1000, perplexity=30, early_exaggeration=12,learning_rate='auto')
 
@@ -321,9 +326,9 @@ def plot_specific_simplified_sets_tSNE(results_dir):
 
     for i in range(len(min_dists)):
         for j in range(len(neighbours)):
-            plotlib.plot_UMAP(dbs=[specific_9, specific_8, specific_7, specific_6, specific_5, specific_4, specific_3, specific_2, specific_1, specific_0], names=['specific_9', 'specific_8', 'specific_7', 'specific_6', 'specific_5', 'specific_4', 'specific_3', 'specific_2', 'specific_1', 'specific_0'], output='%s/UMAP_inner_specifics_md%s_nn%s'%(results_dir, min_dists[i], neighbours[j]), random_max = 1000, delimiter = None, fpsalg = 'Morgan4', colors = plot_colors, sizes = sizes,  alphas = alphas, min_dist = min_dists[i], n_neighbors = neighbours[j], n_epochs = 10000, markers = markers, figsize = (9,6), linewidths = linewidths)
+            plotlib.plot_UMAP(dbs=[specific_7, specific_6, specific_5, specific_4, specific_3, specific_2, specific_1, specific_0], names=['specific_7', 'specific_6', 'specific_5', 'specific_4', 'specific_3', 'specific_2', 'specific_1', 'specific_0'], output='%s/UMAP_inner_specifics_md%s_nn%s'%(results_dir, min_dists[i], neighbours[j]), random_max = 1000, delimiter = None, fpsalg = 'Morgan4', colors = plot_colors, sizes = sizes,  alphas = alphas, min_dist = min_dists[i], n_neighbors = neighbours[j], n_epochs = 10000, markers = markers, figsize = (9,6), linewidths = linewidths)
 
-def plot_tSNE_for_generation_round(results_dir, biased=True):
+def plot_tSNE_for_generation_round(results_dir, biased=False):
     """It plots the tSNE of the gernated compounds at each round (outer generation)."""
 
     if biased:
@@ -334,10 +339,10 @@ def plot_tSNE_for_generation_round(results_dir, biased=True):
         generated_4 = mollib.MolDB(smiDB='%s/round_4_biased/all_trial_generated_smiles_threshold.smi'%results_dir, verbose=False)
         outname = 'tSNE_generated_compounds_biased'
     else:
-        initial_specific = mollib.MolDB(smiDB='%s/round_1/smi_files/simp_specific_0.smi'%results_dir, verbose=False)
+        initial_specific = mollib.MolDB(smiDB='%s/round_1/Mpro_initial_specificset.smi'%results_dir, verbose=False)
         generated_1 = mollib.MolDB(smiDB='%s/round_1/all_trial_generated_smiles_threshold.smi'%results_dir, verbose=False)
         generated_2 = mollib.MolDB(smiDB='%s/round_2/all_trial_generated_smiles_threshold.smi'%results_dir, verbose=False)
-        generated_3 = mollib.MolDB(smiDB='%s/round_3/all_trial_generated_smiles_threshold.smi'%results_dir, verbose=False)
+        generated_3 = mollib.MolDB(smiDB='%s/round_3_reducedta/all_trial_generated_smiles_threshold.smi'%results_dir, verbose=False)
         generated_4 = mollib.MolDB(smiDB='%s/round_4/all_trial_generated_smiles_threshold.smi'%results_dir, verbose=False)
         outname = 'tSNE_generated_compounds_unbiased'
 
@@ -357,7 +362,7 @@ def plot_tSNE_for_generation_round(results_dir, biased=True):
 
     for i in range(len(min_dists)):
         for j in range(len(neighbours)):
-            plotlib.plot_UMAP(dbs=[generated_4, generated_3, generated_2, generated_1, initial_specific], names=['outer4', 'outer3', 'outer2', 'outer1', 'specific'], output='%s/plots/UMAP_final_md%s_nn%s'%(results_dir, min_dists[i], neighbours[j]), random_max = 1000, delimiter = None, fpsalg = 'Morgan4', colors = plot_colors, sizes = sizes,  alphas = alphas, min_dist = min_dists[i], n_neighbors = neighbours[j], n_epochs = 10000, markers = markers, figsize = (8,6), linewidths = linewidths)
+            plotlib.plot_UMAP(dbs=[generated_4, generated_3, generated_2, generated_1, initial_specific], names=['outer4', 'outer3', 'outer2', 'outer1', 'specific'], output='%s/plots/UMAP_final_md%s_nn%s_full'%(results_dir, min_dists[i], neighbours[j]), random_max = 1000, delimiter = None, fpsalg = 'Morgan4', colors = plot_colors, sizes = sizes,  alphas = alphas, min_dist = min_dists[i], n_neighbors = neighbours[j], n_epochs = 10000, markers = markers, figsize = (8,6), linewidths = linewidths)
 
 
 def plot_specific_set_evolution(results_dir, biased=True):
@@ -446,10 +451,11 @@ def zoom_in_histogram(threshold, out, savefig=True):
     """ If zooms in the previous plot by indicating the x limit."""
 
     #csvs = ['smallmol_specific_set/plots/gscore_tanimoto_unbiased/glide_docking_4.csv', 'smallmol_specific_set/plots/gscore_tanimoto_unbiased/glide_docking_3.csv', 'smallmol_specific_set/plots/gscore_tanimoto_unbiased/glide_docking_2.csv', 'smallmol_specific_set/plots/gscore_tanimoto_unbiased/glide_docking_1.csv','initial_set/Mpro_6xbgA1_receptor_SARS2_Mpro_inhibitors_DB_pv_best.csv']
-    csvs = ['smallmol_specific_set/plots/gscore_tanimoto_unbiased/glide_docking_totalgen.csv', 'initial_set/Mpro_6xbgA1_receptor_SARS2_Mpro_inhibitors_DB_pv_best.csv']
-    #superimpose_histograms(list_of_csvs=csvs, list_of_labels=['outer4', 'outer3', 'outer2', 'outer1', 'specific'], insert_title='Gscore of initial and resulting compounds', out='smallmol_specific_set/plots/gscore_initial_and_resulting.png', savefig=False, legend_loc='upper left')
-    superimpose_histograms(list_of_csvs=csvs, list_of_labels=['generated', 'specific'], insert_title='Gscore of initial and resulting compounds', out='smallmol_specific_set/plots/     gscore_initial_and_resulting_totalgen.png', savefig=False, legend_loc='upper left')
-    plt.xlim(-9.5, threshold)
+    #csvs = ['smallmol_specific_set/plots/gscore_tanimoto_unbiased/glide_docking_totalgen.csv', 'initial_set/Mpro_6xbgA1_receptor_SARS2_Mpro_inhibitors_DB_pv_best.csv']
+    csvs = ['paninhibitor/plots/glides/global_sel_glide_gscores_4.csv', 'paninhibitor/plots/glides/global_sel_glide_gscores_3.csv', 'paninhibitor/plots/glides/global_sel_glide_gscores_2.csv', 'paninhibitor/plots/glides/global_sel_glide_gscores_1.csv', 'paninhibitor/plots/glides/global_initial_gscores.csv']
+    superimpose_histograms(list_of_csvs=csvs, list_of_labels=['outer4', 'outer3', 'outer2', 'outer1', 'specific'], insert_title='Gscore of initial and resulting compounds', out='paninhibitor/plots/gscore_initial_and_resulting.png', savefig=False, legend_loc='upper left')
+    #superimpose_histograms(list_of_csvs=csvs, list_of_labels=['generated', 'specific'], insert_title='Gscore of initial and resulting compounds', out='smallmol_specific_set/plots/     gscore_initial_and_resulting_totalgen.png', savefig=False, legend_loc='upper left')
+    plt.xlim(-10, threshold)
     #plt.ylim(0, 290)
     if savefig:
         plt.savefig(out)
@@ -510,6 +516,29 @@ def filter_by_glide_gscore_paninhibitors(list_of_csvs, outdir, gscore_global=-6.
     print('From %s molecules, %s were removed.\nThe new set contains %s molecules'%(len(ligs), (len(ligs) - len(mean)), len(mean)))
 
 
+def _get_global_glide_gscores_paninhibitor(SARS2_csv, SARS_csv, MERS_csv, out):
+    "The mean of glide gscores"
+
+    SARS2 = pd.read_csv(SARS2_csv)
+    SARS = pd.read_csv(SARS_csv)
+    MERS = pd.read_csv(MERS_csv)
+    df = pd.concat([SARS2, SARS, MERS])
+    ligs = df['title'].tolist()
+    ligs = set(ligs)
+    means = []
+    smiles = []
+    for lig in ligs:
+        mean_gscore = df.loc[df['title'] == lig]['r_i_glide_gscore'].mean()
+        smile = df.loc[df['title'] == lig]['SMILES'].tolist()
+        smile = smile[0] # some smiles differ from quirality. I selected the first one (corresponding to SARS2)
+        means.append(mean_gscore)
+        smiles.append(smile)
+    mean_df = pd.DataFrame(list(zip(ligs, smiles, means)), columns =['title',  'SMILES', 'r_i_glide_gscore'])
+    print(mean_df)
+    mean_df.to_csv('%s'%out)
+
+
+
 ########## FINAL VALIDATION BLOCK ##########
 
 def create_df_gscore_vs_tanimoto(files_dir, gscore_limit=-7, tan_limit=0.3, biased=False):
@@ -523,12 +552,12 @@ def create_df_gscore_vs_tanimoto(files_dir, gscore_limit=-7, tan_limit=0.3, bias
     specific_smiles = [line for line in specific]
     specific_mols = [mollib.Mol(smile=smile) for smile in specific_smiles]
 
-    out = open('%s/df_gscore_%s_tan_%s.csv'%(files_dir, gscore_limit, tan_limit), 'w')
+    out = open('%s/global_sel_df_gscore_%s_tan_%s.csv'%(files_dir, gscore_limit, tan_limit), 'w')
     out.write('id,SMILE,gscore,max_tan,round\n')
     if biased:
         files = glob.glob('%s/glide_docking_biased*'%files_dir)
     else:
-        files = glob.glob('%s/glide_docking_*'%files_dir)
+        files = glob.glob('%s/global_sel_glide_gscores_*'%files_dir)
     files.sort()
     for csv_file in files:
         gen_round = os.path.basename(csv_file).replace('.csv', '').split('_')[-1]
@@ -718,45 +747,97 @@ def plot_UMAP_biased_unbiased(results_dir):
     plotlib.plot_UMAP(dbs=[unbiased_4, biased_4, unbiased_3, biased_3, unbiased_2, biased_2, unbiased_1, biased_1, specific], names=['outer4',  'biased_outer4', 'outer3', 'biased_outer3', 'outer2',  'biased_outer2', 'outer1', 'biased_outer1', 'specific'], output='%s/plots/UMAP_biased_unbiased'%(results_dir), random_max = 1000, delimiter = None, fpsalg = 'Morgan4', colors = plot_colors, sizes = sizes, alphas = alphas, min_dist = 0.1, n_neighbors = 100, n_epochs = 1000, markers =  markers, figsize = (8,8), linewidths = linewidths)
 
 
+# COMPARISON OF DIFFERENT GENERATION TYPES
+def plot_UMAP_comparison_2dbs(db1, db2, out, titles, palette = "YnGnBu"):
+    """It plots the UMAP of the generated compounds for paninhibitor design.
+    It compares the ones generated with full specific set vs. the ones
+    generated with selective specific set."""
+
+
+    smidb1 = mollib.MolDB(smiDB=db1, verbose=False)
+    smidb2 = mollib.MolDB(smiDB=db2, verbose=False)
+
+    plot_colors = mcp.gen_color(cmap=palette, n=2)
+
+    min_dists = [0, 0.2, 0.4]
+    neighbours = [100, 150, 200, 250]
+
+    for i in range(len(min_dists)):
+        for j in range(len(neighbours)):
+            plotlib.plot_UMAP(dbs=[smidb1, smidb2], names=titles, output='%s_md%s_nn%s'%(out, min_dists[i], neighbours[j]), random_max = 1000, delimiter = None, fpsalg = 'Morgan4', colors = plot_colors, sizes = [0.4, 0.4], alphas = [0.9, 0.9], min_dist = min_dists[i], n_neighbors = neighbours[j], n_epochs = 1000, markers = ["o", "o"], figsize = (8,6), linewidths = [0,0])
+
+def plot_UMAP_full_selective(pan_dir, out):
+    """Comparison UMAP full vs. selective specific set.
+    Everything in one plot."""
+
+    full_specific = mollib.MolDB(smiDB='%s/round_1/Mpro_initial_specificset.smi'%pan_dir, verbose=False)
+    full_1 = mollib.MolDB(smiDB='%s/round_1/all_trial_generated_smiles_threshold.smi'%pan_dir, verbose=False)
+    full_2 = mollib.MolDB(smiDB='%s/round_2/all_trial_generated_smiles_threshold.smi'%pan_dir, verbose=False)
+    full_3 = mollib.MolDB(smiDB='%s/round_3_reducedta/all_trial_generated_smiles_threshold.smi'%pan_dir, verbose=False)
+    full_4 = mollib.MolDB(smiDB='%s/round_4/all_trial_generated_smiles_threshold.smi'%pan_dir, verbose=False)
+    sel_specific = mollib.MolDB(smiDB='%s/round_1_selective/initial_specific_set.smi'%pan_dir, verbose=False)
+    sel_1 = mollib.MolDB(smiDB='%s/round_1_selective/all_trial_generated_smiles_threshold.smi'%pan_dir, verbose=False)
+    sel_2 = mollib.MolDB(smiDB='%s/round_2_selective/all_trial_generated_smiles_threshold.smi'%pan_dir, verbose=False)
+    sel_3 = mollib.MolDB(smiDB='%s/round_3_selective_reducedta/all_trial_generated_smiles_threshold.smi'%pan_dir, verbose=False)
+    sel_4 = mollib.MolDB(smiDB='%s/round_4_selective/all_trial_generated_smiles_threshold.smi'%pan_dir, verbose=False)
+
+    cool_colors = mcp.gen_color(cmap="YlGnBu", n=6)
+    cool_colors = cool_colors[1:6]
+    warm_colors = mcp.gen_color(cmap="YlOrRd", n=6)
+    warm_colors = warm_colors[1:6]
+    plot_colors = cool_colors[0], warm_colors[0], cool_colors[1], warm_colors[1], cool_colors[2], warm_colors[2], cool_colors[3], warm_colors[3], cool_colors[4], warm_colors[4]
+    sizes = [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.3, 0.3]
+    alphas = [0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9]
+    linewidths = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    markers = ["o", "o", "o", "o", "o", "o", "o", "o", "*", "*"]
+
+    min_dists = [0.8, 1]
+    neighbours = [25, 50]
+
+    for i in range(len(min_dists)):
+         for j in range(len(neighbours)):
+             plotlib.plot_UMAP(dbs=[full_4, sel_4, full_3, sel_3, full_2, sel_2, full_1, sel_1, full_specific, sel_specific], names=['full_outer4',  'sel_outer4', 'full_outer3', 'sel_outer3', 'full_outer2',  'sel_outer2', 'full_outer1', 'sel_outer1', 'full_specific', 'sel_specific'], output='%s/UMAP_full_selective_md%s_nn%s'%(out, min_dists[i], neighbours[j]), random_max = 1000, delimiter = None, fpsalg = 'Morgan4', colors = plot_colors, sizes = sizes, alphas = alphas, min_dist = min_dists[i], n_neighbors = neighbours[j], n_epochs = 1000, markers = markers, figsize = (8,6), linewidths = linewidths)
+
 
 
 if __name__ == "__main__":
 
-    #join_all_molecule_files('smallmol_specific_set/round_5_biased', 'trial_generated_smiles_threshold')
+    #join_all_molecule_files('paninhibitor/round_4_selective', 'trial_generated_smiles_threshold')
 
-    #create_table_gmn_counts('smallmol_specific_set/round_5_biased', save_df=True)
+    #create_table_gmn_counts('paninhibitor/round_4_selective', save_df=True)
 
-    #plot_all_props_in_one('smallmol_specific_set/round_5_biased')
+    #plot_all_props_in_one('paninhibitor/round_4_selective')
 
     #plot_specific_sets_tSNE('full_specific_set/round_1')
 
-    #_simplify_specific_sets('smallmol_specific_set/round_4_biased_new')
-    #plot_specific_simplified_sets_tSNE('smallmol_specific_set/round_1')
+    #_simplify_specific_sets('paninhibitor/round_4_selective')
+    #plot_specific_simplified_sets_tSNE('paninhibitor/round_4_selective')
 
     #_convert_csv_to_smi_file('smallmol_specific_set/round_1/trial_1/trial_specific_smiles.csv', outdir='smallmol_specific_set/round_1/smi_files')
 
     #plot_tSNE_before_and_after('smallmol_specific_set/round_1')
 
-    #plot_tSNE_for_generation_round('smallmol_specific_set', biased=False)
+    #plot_tSNE_for_generation_round('paninhibitor', biased=False)
 
-    #get_best_glide_docking_pose_for_ligand('paninhibitor/glide_docking_1/docking/output_models/MERS_7eneC1_prep/MERS_7eneC1_prep_all_trial_generated_smiles_threshold.csv')
+    #get_best_glide_docking_pose_for_ligand('paninhibitor/glide_docking_4/docking/output_models/MERS_7eneC1_prep/MERS_7eneC1_prep_all_trial_generated_smiles_threshold.csv')
 
     #filter_by_glide_gscore(path_to_best_csv='smallmol_specific_set/biased_glide_5/docking/output_models/Mpro_6xbgA1_receptor/Mpro_6xbgA1_receptor_Mpro_smallmol_generated_threshold_best.csv', gscore=-6.5, outdir='smallmol_specific_set/biased_glide_5/')
 
-    csvs = glob.glob('paninhibitor/glide_docking_1/docking/output_models/*/*_best.csv')
-    filter_by_glide_gscore_paninhibitors(list_of_csvs=csvs, outdir='paninhibitor/round_2/')
+    #csvs = glob.glob('paninhibitor/glide_docking_4/docking/output_models/*/*_best.csv')
+    #filter_by_glide_gscore_paninhibitors(list_of_csvs=csvs, outdir='paninhibitor/glide_docking_4/')
 
-    csvs = ['smallmol_specific_set/plots/gscore_tanimoto_unbiased/glide_docking_4.csv', 'smallmol_specific_set/plots/gscore_tanimoto_unbiased/glide_docking_3.csv', 'smallmol_specific_set/plots/gscore_tanimoto_unbiased/glide_docking_2.csv', 'smallmol_specific_set/plots/gscore_tanimoto_unbiased/glide_docking_1.csv','initial_set/Mpro_6xbgA1_receptor_SARS2_Mpro_inhibitors_DB_pv_best.csv']
+    #csvs = ['smallmol_specific_set/plots/gscore_tanimoto_unbiased/glide_docking_4.csv', 'smallmol_specific_set/plots/gscore_tanimoto_unbiased/glide_docking_3.csv', 'smallmol_specific_set/plots/gscore_tanimoto_unbiased/glide_docking_2.csv', 'smallmol_specific_set/plots/gscore_tanimoto_unbiased/glide_docking_1.csv','initial_set/Mpro_6xbgA1_receptor_SARS2_Mpro_inhibitors_DB_pv_best.csv']
     #csvs = ['smallmol_specific_set/plots/gscore_tanimoto_unbiased/glide_docking_totalgen.csv', 'initial_set/Mpro_6xbgA1_receptor_SARS2_Mpro_inhibitors_DB_pv_best.csv']
-    #superimpose_histograms(list_of_csvs=csvs, list_of_labels=['outer4', 'outer3', 'outer2', 'outer1', 'specific'], insert_title='Gscore of initial and resulting compounds', out='smallmol_specific_set/plots/gscore_initial_and_resulting_bins.pdf')
+    csvs = ['paninhibitor/plots/glides/global_sel_glide_gscores_4.csv', 'paninhibitor/plots/glides/global_sel_glide_gscores_3.csv', 'paninhibitor/plots/glides/global_sel_glide_gscores_2.csv', 'paninhibitor/plots/glides/global_sel_glide_gscores_1.csv', 'paninhibitor/plots/glides/global_initial_gscores.csv']
+    #superimpose_histograms(list_of_csvs=csvs, list_of_labels=['outer4', 'outer3', 'outer2', 'outer1', 'specific'], insert_title='Gscore of initial and resulting compounds', out='paninhibitor/plots/global_sel_hist_gscore_bins.pdf')
 
-    #zoom_in_histogram(threshold=-6, out='smallmol_specific_set/plots/gscore_initial_and_resulting_zoom_totalgen_bins.pdf', savefig=True)
+    #zoom_in_histogram(threshold=-6.5, out='paninhibitor/plots/global_sel_hist_gscore_zoom_bins.pdf', savefig=True)
 
     #plot_specific_set_evolution('smallmol_specific_set', biased=False)
 
-    #create_df_gscore_vs_tanimoto('smallmol_specific_set/plots/gscore_tanimoto_biased', gscore_limit=-6.5, tan_limit=0.5)
+    #create_df_gscore_vs_tanimoto('paninhibitor/plots/glides', gscore_limit=-5.9, tan_limit=0.5)
 
-    #plot_gscore_vs_tanimoto('smallmol_specific_set/plots/gscore_tanimoto_biased/df_gscore_-6.5_tan_0.5.csv', outdir='smallmol_specific_set/plots/gscore_tanimoto_biased', gscore_threshold=-7, tan_threshold=0.3)
+    #plot_gscore_vs_tanimoto('paninhibitor/plots/gscore_tan/global_sel_df_gscore_-5.9_tan_0.5.csv', outdir='paninhibitor/plots/gscore_tan', gscore_threshold=-7, tan_threshold=0.3)
 
     #get_mol_formal_charges('smallmol_specific_set/plots/gscore_tanimoto_biased/df_gscore_-7_tan_0.3.csv')
 
@@ -765,5 +846,12 @@ if __name__ == "__main__":
 
     #plot_UMAP_biased_unbiased('smallmol_specific_set')
 
-
     #arreglo('smallmol_specific_set/candidates/PELE_unmodified/PELE_Glide_analysis.csv')
+
+    #_get_global_glide_gscores_paninhibitor(SARS2_csv = 'paninhibitor/plots/glides/SARS2_selective_glide_docking_4.csv', SARS_csv = 'paninhibitor/plots/glides/SARS_selective_glide_docking_4.csv', MERS_csv = 'paninhibitor/plots/glides/MERS_selective_glide_docking_4.csv', out = 'paninhibitor/plots/glides/global_sel_glide_gscores_4.csv')
+
+    plot_UMAP_comparison_2dbs(db1='paninhibitor/all_generated_selective.smi', db2='paninhibitor/all_generated_1target.smi', out='paninhibitor/plots/comp_1targ_3targ/UMAP_generated_sel_1targ_3targ', titles = ["1target", "3targets"], palette = "winter")
+
+    #plot_UMAP_full_selective(pan_dir='paninhibitor', out='paninhibitor/plots')
+
+
