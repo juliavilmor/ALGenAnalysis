@@ -189,6 +189,16 @@ def _simplify_specific_sets(results_dir, outname):
         except:
             pass # because the last inner does not hace specific set file.
 
+def _convert_smi_to_sdf(smi_file):
+    """It converts a smi file into sdf file."""
+    
+    with Chem.SmilesMolSupplier(smi_file) as suppl:
+        with Chem.SDWriter('%s'%smi_file.replace('.smi', '.sdf')) as w:
+            for m in suppl:
+                w.write(m)
+    print('smi converted to sdf successfully')
+
+
 def plot_modbs_tSNE_or_UMAP(list_of_sdfs, list_of_names, outdir, outname, sizes, alphas, markers, ptype='UMAP'):
     """ It plots the tSNE/UMAP of all the sets indicated in the list."""
 
@@ -237,12 +247,15 @@ if __name__ == "__main__":
     # for i, spec_simple in enumerate(spec_simples):
     #     convert_csv_to_sdf_file(csv_to_convert=spec_simple, outdir='/home/cactus/julia/gensim/full/outer1/gensim_mt_%s'%spec_inner[i], inner=spec_inner[i])
 
+    #_convert_smi_to_sdf(smi_file='/home/cactus/julia/gensim/full/outer1/full_init_spec_set.smi')
+    
     spec_simples = glob.glob('/home/cactus/julia/gensim/full/outer1/gensim_mt_*/gensim_mt_specific_smiles_simple.sdf')
     sdf_list = []
-    rev_inners = list(range(1, 20))
+    rev_inners = list(range(1, len(spec_simples)+1))
     rev_inners.sort(reverse=True)
     for i in rev_inners:
         sdf_list.append('/home/cactus/julia/gensim/full/outer1/gensim_mt_%s/gensim_mt_specific_smiles_simple.sdf'%i)
+    sdf_list.append('/home/cactus/julia/gensim/full/outer1/full_init_spec_set.sdf')
     names = ['specific_19', 'specific_18', 'specific_17', 'specific_16', 'specific_15',\
             'specific_14', 'specific_13', 'specific_12', 'specific_11', 'specific_10',\
             'specific_9', 'specific_8', 'specific_7', 'specific_6', 'specific_5',\
@@ -250,5 +263,6 @@ if __name__ == "__main__":
     sizes = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
     alphas = [0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9]
     markers = ["o", "o", "o", "o", "o", "o", "o", "o", "o", "o", "o", "o", "o", "o", "o", "o", "o", "o", "o", "*"]
-    plot_modbs_tSNE_or_UMAP(list_of_sdfs=spec_simples, list_of_names=names, outdir='/home/cactus/julia/gensim/full/outer1/', outname='UMAP_test',\
+
+    plot_modbs_tSNE_or_UMAP(list_of_sdfs=sdf_list, list_of_names=names, outdir='/home/cactus/julia/gensim/full/outer1/', outname='UMAP_test',\
                             sizes=sizes, alphas=alphas, markers=markers, ptype='UMAP')
