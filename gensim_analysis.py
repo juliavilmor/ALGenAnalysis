@@ -175,19 +175,20 @@ def _simplify_specific_sets(results_dir, outname):
         df1 = pd.read_csv(df1)
         df2 = pd.read_csv(df2)
         df = pd.concat([df1, df2])
+        df.drop_duplicates(subset=['smiles'], keep=False, inplace=True)
         return df
     
     spec_files = glob.glob('%s/%s_*/%s_specific_smiles.csv'%(results_dir,outname, outname))
     total = len(spec_files)
     for i in range(total):
         i = i+1
-        try:
-            df_1 = '%s/%s_%s/%s_specific_smiles.csv'%(results_dir,outname, i, outname)
-            df_2 = '%s/%s_%s/%s_specific_smiles.csv'%(results_dir,outname, i+1, outname)
+        if i == 1: # the initial specific set is the same
+            os.system('cp %s/%s_%s/%s_specific_smiles.csv %s/%s_%s/%s_specific_smiles_simple.csv'%(results_dir,outname, i, outname, results_dir,outname, i, outname))
+        elif i > 1 & i < (total-1): # the last one does not have specific set
+            df_1 = '%s/%s_%s/%s_specific_smiles.csv'%(results_dir,outname, i-1, outname)
+            df_2 = '%s/%s_%s/%s_specific_smiles.csv'%(results_dir,outname, i, outname)
             df = drop_duplicates_2_dfs(df_1, df_2)
             df.to_csv('%s/%s_%s/%s_specific_smiles_simple.csv'%(results_dir,outname, i, outname), index=False)
-        except:
-            pass # because the last inner does not hace specific set file.
 
 def _convert_smi_to_sdf(smi_file):
     """It converts a smi file into sdf file."""
@@ -204,15 +205,27 @@ def plot_modbs_tSNE_or_UMAP(list_of_sdfs, list_of_names, outdir, outname, sizes,
 
     total = len(list_of_sdfs)
     moldb_list = []
-    for file in list_of_sdfs:
-        mols = moldb.MolDB(sdfDB=file, verbose=False)
-        moldb_list.append(mols)
-    
+    index_del = []
+    for i, file in enumerate(list_of_sdfs):
+        try:
+            mols = moldb.MolDB(sdfDB=file, verbose=False)
+            print(mols)
+            moldb_list.append(mols)
+            
+        # is there are empy files (because there is no new generated molecules)    
+        except: # remove them from other lists
+            index_del.append(i)
+    list_of_names = [i for j, i in enumerate(list_of_names) if j not in index_del]
+    sizes  = [i for j, i in enumerate(sizes) if j not in index_del]
+    alphas  = [i for j, i in enumerate(alphas) if j not in index_del]
+    markers  = [i for j, i in enumerate(markers) if j not in index_del]
+            
     plot_colors = mcp.gen_color(cmap="YlGnBu", n=total+1)
     plot_colors = plot_colors[1:total+1]
+    plot_colors = [i for j, i in enumerate(plot_colors) if j not in index_del]
 
-    min_dists = [0.2]
-    neighbours = [100]
+    min_dists = [0.2, 0.4, 0.6]
+    neighbours = [50, 100, 200, 300]
 
     if ptype == 'tSNE':
         plot.plotTSNE(dbs = moldb_list, names = list_of_names, output='%s/%s'%(results_dir, outname),\
@@ -224,9 +237,11 @@ def plot_modbs_tSNE_or_UMAP(list_of_sdfs, list_of_names, outdir, outname, sizes,
         for i in range(len(min_dists)):
             for j in range(len(neighbours)):
                 plot.plotUMAP(dbs = moldb_list, names = list_of_names, output='%s/%s_md%s_nn%s'%(outdir, outname, min_dists[i], neighbours[j]),\
-                            random_max = 1000, delimiter = None, alg = 'Morgan4', colors = plot_colors, sizes = sizes,  alphas = alphas,\
+                            random_max = 50000, delimiter = None, alg = 'Morgan4', colors = plot_colors, sizes = sizes,  alphas = alphas,\
                             min_dist = min_dists[i], n_neighbors = neighbours[j], n_epochs = 10000, markers = markers, figsize = (9,6), \
                             linewidth = 0)
+                print('UMAP with parameters md %s and nn %s done!'%(neighbours[j], min_dists[i]))
+
 
         
 if __name__ == "__main__":
@@ -241,28 +256,26 @@ if __name__ == "__main__":
     
     #convert_csv_to_sdf_file(csv_to_convert='/home/cactus/julia/gensim/full/outer1/all_generated_molecules.csv', outdir='/home/cactus/julia/gensim/full/outer1')
     
-    #_simplify_specific_sets(results_dir='/home/cactus/julia/gensim/full/outer1', outname=n)
+    # _simplify_specific_sets(results_dir='/home/cactus/julia/gensim/full/outer1', outname=n)
     # spec_simples = glob.glob('/home/cactus/julia/gensim/full/outer1/gensim_mt_*/gensim_mt_specific_smiles_simple.csv')
     # spec_inner = [x.split('/')[-2].split('_')[-1] for x in spec_simples]
     # for i, spec_simple in enumerate(spec_simples):
     #     convert_csv_to_sdf_file(csv_to_convert=spec_simple, outdir='/home/cactus/julia/gensim/full/outer1/gensim_mt_%s'%spec_inner[i], inner=spec_inner[i])
 
-    #_convert_smi_to_sdf(smi_file='/home/cactus/julia/gensim/full/outer1/full_init_spec_set.smi')
-    
+    # _convert_smi_to_sdf(smi_file='/home/cactus/julia/gensim/full/outer1/full_init_spec_set.smi')
+
     spec_simples = glob.glob('/home/cactus/julia/gensim/full/outer1/gensim_mt_*/gensim_mt_specific_smiles_simple.sdf')
     sdf_list = []
     rev_inners = list(range(1, len(spec_simples)+1))
     rev_inners.sort(reverse=True)
     for i in rev_inners:
         sdf_list.append('/home/cactus/julia/gensim/full/outer1/gensim_mt_%s/gensim_mt_specific_smiles_simple.sdf'%i)
-    sdf_list.append('/home/cactus/julia/gensim/full/outer1/full_init_spec_set.sdf')
     names = ['specific_19', 'specific_18', 'specific_17', 'specific_16', 'specific_15',\
             'specific_14', 'specific_13', 'specific_12', 'specific_11', 'specific_10',\
             'specific_9', 'specific_8', 'specific_7', 'specific_6', 'specific_5',\
             'specific_4', 'specific_3', 'specific_2', 'specific_1', 'specific_0']
-    sizes = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+    sizes = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.6]
     alphas = [0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9]
     markers = ["o", "o", "o", "o", "o", "o", "o", "o", "o", "o", "o", "o", "o", "o", "o", "o", "o", "o", "o", "*"]
-
-    plot_modbs_tSNE_or_UMAP(list_of_sdfs=sdf_list, list_of_names=names, outdir='/home/cactus/julia/gensim/full/outer1/', outname='UMAP_test',\
+    plot_modbs_tSNE_or_UMAP(list_of_sdfs=sdf_list, list_of_names=names, outdir='/home/cactus/julia/gensim/full/outer1/plots', outname='UMAP_outer1',\
                             sizes=sizes, alphas=alphas, markers=markers, ptype='UMAP')
