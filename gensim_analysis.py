@@ -10,6 +10,7 @@ import seaborn as sns
 from rdkit import Chem
 from collections import Counter
 from statistics import mean
+import itertools
 
 def get_all_generated_molecules(results_dir, outname):
     """ It joins all generated molecules into one single file."""
@@ -26,7 +27,7 @@ def get_all_generated_molecules(results_dir, outname):
     all_generated = pd.concat(df_list)
     all_generated = all_generated.sort_values('inner')
     all_generated.to_csv('%s/all_generated_molecules.csv'%results_dir, index=False)
-    print('Total generate molecules: %s'%len(all_generated))
+    print('Total generated molecules: %s'%len(all_generated))
     
 
 def create_table_gm_counts(results_dir, outname, save_df=False):
@@ -199,6 +200,25 @@ def _convert_smi_to_sdf(smi_file):
                 w.write(m)
     print('smi converted to sdf successfully')
 
+def simplify_specific_sets_smi(list_spec_set):
+        """ It extracts the repeated smiles in each specific set in smi format.
+            The list must be ordered from the initial specific set to the last one."""
+    
+        total = len(list_spec_set)
+        print(total)
+        for i in range(total):
+            if i == 0: # the initial specific set is the same
+                pass
+            elif i >= 1 & i < (total): # the last one does not have specific set
+                # I want to extract the smiles that are not in the previous set
+                print(i, i-1)
+                set1 = set(open(list_spec_set[i], 'r').read().split('\n'))
+                set2 = set(open(list_spec_set[i-1], 'r').read().split('\n'))
+                print(len(set1), len(set2))
+                simple = set1 - set2
+                with open(list_spec_set[i].replace('.smi', '_simple.smi'), 'w') as f:
+                    f.write('\n'.join(simple))
+                print('Set %s simplified.'%list_spec_set[i])
 
 def plot_modbs_tSNE_or_UMAP(list_of_sdfs, list_of_names, outdir, outname, sizes, alphas, markers, ptype='UMAP'):
     """ It plots the tSNE/UMAP of all the sets indicated in the list."""
@@ -242,8 +262,116 @@ def plot_modbs_tSNE_or_UMAP(list_of_sdfs, list_of_names, outdir, outname, sizes,
                             linewidth = 0)
                 print('UMAP with parameters md %s and nn %s done!'%(neighbours[j], min_dists[i]))
 
-
+def get_smi_files_from_csv(csv_file, outdir):
+    """It gets the smiles from a csv file and saves them into a smi file."""
+    
+    df = pd.read_csv(csv_file)
+    outname = os.path.basename(csv_file).replace('.csv', '.smi')
+    with open('%s/%s'%(outdir, outname), 'w') as f:
+        for index, row in df.iterrows():
+            f.write('%s\n'%row['SMILE'])
+    print('smi file created successfully')
+    
+def remove_duplicates_from_sdf(sdf_file):
+    """It removes duplicates from an sdf file."""
+    
+    mols = moldb.MolDB(sdfDB=sdf_file, verbose=False)
+    mols.saveToSdf(sdf_file.replace('.sdf', '_unique'))
+    print('Duplicates removed successfully')
+    
+def plot_UMAP(list_smis, list_names, outdir, outname, sizes, alphas, markers):
+    """It plots the tSNE of all the sets indicated in the list."""
+    total = len(list_smis)
+    mol_list = [moldb.MolDB(smiDB=smi, verbose=False) for smi in list_smis]
+    colors = mcp.gen_color(cmap="YlGnBu", n=total+1)
+    colors = colors[2:total+1]
+    colors = colors + ['red']
+    
+    # If there are empty files (because there is no new generated molecules)
+    # remove them from the lists
+    len_moldb = [len(mol.mols) for mol in mol_list]
+    index_del = [i for i, x in enumerate(len_moldb) if x == 0]
+    list_names = [i for j, i in enumerate(list_names) if j not in index_del]
+    sizes  = [i for j, i in enumerate(sizes) if j not in index_del]
+    alphas  = [i for j, i in enumerate(alphas) if j not in index_del]
+    markers  = [i for j, i in enumerate(markers) if j not in index_del]
+    colors = [i for j, i in enumerate(colors) if j not in index_del]
+    mol_list = [i for j, i in enumerate(mol_list) if j not in index_del]
+    
+    min_dists = [0.2, 0.4, 0.6]
+    neighbours = [50, 100, 200]
+    for i in range(len(min_dists)):
+        for j in range(len(neighbours)):
+            plot.plotUMAP(dbs = mol_list, names = list_names, output='%s/%s_md%s_nn%s'%(outdir, outname, min_dists[i], neighbours[j]),\
+                        random_max = 50000, delimiter = None, alg = 'Morgan4', colors = colors, sizes = sizes,  alphas = alphas,\
+                        min_dist = min_dists[i], n_neighbors = neighbours[j], n_epochs = 10000, markers = markers, figsize = (9,6), \
+                        linewidth = 0)
         
+def plot_specific_set_evolution(results_dir, outdir, outname):
+    """It plots the evolution of the specific set."""
+    plt.figure()
+    fig, ax = plt.subplots(figsize=(8,6))
+    outers = glob.glob('%s/outer?'%results_dir)
+    outers.sort()
+    outers = outers + ['%s/outer10'%results_dir]
+
+    sizes_specific = []
+    inner_sizes = []
+    for i, outer in enumerate(outers):
+        table = pd.read_csv('%s/outer%s/table_of_counts_trans.csv'%(results_dir, i+1))
+        size_specific = table['specific'].tolist()
+        sizes_specific.extend(size_specific)
+        inner_size = len(table)
+        inner_sizes.append(inner_size)
+    x = list(range(1, len(sizes_specific)+1))
+    plt.plot(x, sizes_specific, marker='.', color='blue', label='specific set')
+    lines = list(itertools.accumulate(inner_sizes))
+    for line in lines:
+        plt.axvline(line, color='black', linestyle=':', alpha=0.5)
+    plt.savefig('%s/%s.pdf'%(outdir, outname))
+
+def superpose_specific_set_evolution(results_dir_1, results_dir_2, outdir, outname):
+    """It superposes the evolution of the specific set."""
+    plt.figure()
+    fig, ax = plt.subplots(figsize=(8,6))
+    outers = glob.glob('%s/outer?'%results_dir_1)
+    outers.sort()
+    outers = outers + ['%s/outer10'%results_dir_1]
+
+    sizes_specific = []
+    inner_sizes = []
+    for i, outer in enumerate(outers):
+        table = pd.read_csv('%s/outer%s/table_of_counts_trans.csv'%(results_dir_1, i+1))
+        size_specific = table['specific'].tolist()
+        sizes_specific.extend(size_specific)
+        inner_size = len(table)
+        inner_sizes.append(inner_size)
+    x = list(range(1, len(sizes_specific)+1))
+    plt.plot(x, sizes_specific, marker='.', color='green', label='specific set FULL')
+    
+    outers2 = glob.glob('%s/outer?'%results_dir_2)
+    outers2.sort()
+    outers2 = outers2 + ['%s/outer10'%results_dir_2]
+    
+    sizes_specific2 = []
+    inner_sizes2 = []
+    for i, outer in enumerate(outers2):
+        table = pd.read_csv('%s/outer%s/table_of_counts_trans.csv'%(results_dir_2, i+1))
+        size_specific = table['specific'].tolist()
+        sizes_specific2.extend(size_specific)
+        inner_size = len(table)
+        inner_sizes2.append(inner_size)
+    x2 = list(range(1, len(sizes_specific2)+1))
+    plt.plot(x2, sizes_specific2, marker='.', color='blue', label='specific set SELECTIVE')
+    
+    lines = list(itertools.accumulate(inner_sizes))
+    for line in lines:
+        plt.axvline(line, color='black', linestyle=':', alpha=0.5)
+
+    plt.legend(loc='upper right')
+    plt.savefig('%s/%s.pdf'%(outdir, outname))
+    
+    
 if __name__ == "__main__":
     
     n = 'gensim_mt'
