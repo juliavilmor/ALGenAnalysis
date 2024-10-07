@@ -330,7 +330,7 @@ def plot_specific_set_evolution(results_dir, outdir, outname):
         plt.axvline(line, color='black', linestyle=':', alpha=0.5)
     plt.savefig('%s/%s.pdf'%(outdir, outname))
 
-def superpose_specific_set_evolution(results_dir_1, results_dir_2, outdir, outname):
+def superpose_specific_set_evolution(results_dir_1, results_dir_2, gscore_values_1, gscore_values_2, outdir, outname):
     """It superposes the evolution of the specific set."""
     plt.figure()
     fig, ax = plt.subplots(figsize=(8,6))
@@ -347,7 +347,7 @@ def superpose_specific_set_evolution(results_dir_1, results_dir_2, outdir, outna
         inner_size = len(table)
         inner_sizes.append(inner_size)
     x = list(range(1, len(sizes_specific)+1))
-    plt.plot(x, sizes_specific, marker='.', color='green', label='specific set FULL')
+    plt.plot(x, sizes_specific, marker='.', color='seagreen', label='specific set FULL')
     
     outers2 = glob.glob('%s/outer?'%results_dir_2)
     outers2.sort()
@@ -362,13 +362,26 @@ def superpose_specific_set_evolution(results_dir_1, results_dir_2, outdir, outna
         inner_size = len(table)
         inner_sizes2.append(inner_size)
     x2 = list(range(1, len(sizes_specific2)+1))
-    plt.plot(x2, sizes_specific2, marker='.', color='blue', label='specific set SELECTIVE')
+    plt.plot(x2, sizes_specific2, marker='.', color='royalblue', label='specific set SELECTIVE')
+    plt.legend(loc='upper right')
     
     lines = list(itertools.accumulate(inner_sizes))
+    
     for line in lines:
         plt.axvline(line, color='black', linestyle=':', alpha=0.5)
 
-    plt.legend(loc='upper right')
+    ax.set_yscale('log', base=10)
+    ax.set_ylabel('Specific set size (log scale)')
+    ax.set_xlabel('Inner round')
+    
+    # Create a secondary y-axis with the gscore values
+    ax2 = ax.twinx()
+    ax2.set_ylabel('Global Gscores')
+    ax2.plot(lines, gscore_values_1, marker='.', color='lightgreen', label='Gscore FULL', linewidth=5, alpha=0.5)
+    ax2.plot(lines, gscore_values_2, marker='.', color='cornflowerblue', label='Gscore SELECTIVE', linewidth=5, alpha=0.5)
+    ax2.set_ylim(-9, -6)
+    
+    plt.legend(loc='lower right')
     plt.savefig('%s/%s.pdf'%(outdir, outname))
     
     
