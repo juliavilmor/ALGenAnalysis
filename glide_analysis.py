@@ -16,6 +16,7 @@ def get_best_glide_docking_pose(csv_file, to_csv=True):
         based on the glide gscore """
  
     df = pd.read_csv(csv_file)
+    df = df[df['SMILES'] != 'invalid_structure']
     idx = df.groupby('title')['r_i_glide_gscore'].idxmin()
     df_best = df.loc[idx]
     print('The best pose for each compound has been obtained. Total: %s compounds'%len(df_best))
@@ -133,6 +134,30 @@ def filter_by_glide_gscore_paninhibitors(list_of_csvs, outdir, gscore_global=-6.
                 smi_file.close()
     print('From %s molecules, %s were removed.\nThe new set contains %s molecules'%(len(ligs), (len(ligs) - len(mean)), len(mean)))
 
+def cumulative_histograms(final_csvs, initial_csvs, list_of_labels, list_of_colors, insert_title, out, savefig=True, legend_loc='upper right', xlim=None, ylim=None):
+    
+    plt.figure(figsize=(6,6))
+    fig, ax = plt.subplots()
+    list_of_csvs = final_csvs + initial_csvs
+    total = len(list_of_csvs)
+    colors = list_of_colors
+    for i, data in enumerate(list_of_csvs):
+        df = pd.read_csv(data)
+        df = df.rename(columns={'r_i_glide_gscore': 'gscore'})
+        df = df[df['gscore'] != 10000]
+        average = mean(df['gscore'].tolist())
+        sns.histplot(data=df, x=df['gscore'].astype(float), color=colors[i], label=list_of_labels[i], element='step', fill=False, bins=70)
+        plt.axvline(average, color=colors[i], linestyle=":")
+    plt.legend(loc=legend_loc, frameon=False)
+    plt.title(insert_title)
+    plt.xlabel("Glide docking score (kcal/mol)")
+    plt.ylabel("Counts")
+    if xlim:
+        plt.xlim(xlim[0], xlim[1])
+    if ylim:
+        plt.ylim(ylim[0], ylim[1])
+    if savefig:
+        plt.savefig(out)
     
 
 if __name__ == "__main__":
