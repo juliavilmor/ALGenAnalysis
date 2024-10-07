@@ -43,8 +43,8 @@ if __name__ == "__main__":
     
     # PLOT HISTOGRAMS OF GLIDE DOCKING SCORES
     """
-    virus = 'global'      # Select: 'SARS2', 'SARS', 'MERS', 'global'
-    target = 'glide'   # Select: '7rnwA1', '2gx4A1', '7eneC1', 'glide'
+    virus = 'SARS2'      # Select: 'SARS2', 'SARS', 'MERS', 'global'
+    target = '7rnwA1'   # Select: '7rnwA1', '2gx4A1', '7eneC1', 'glide'
     glide_csvs = ['/home/cactus/julia/gensim/full/glide0/docking/%s_%s_docking_best.csv'%(virus,target),\
                     '/home/cactus/julia/gensim/full/glide1/docking/%s_%s_docking_best.csv'%(virus,target),\
                     '/home/cactus/julia/gensim/full/glide2/docking/%s_%s_docking_best.csv'%(virus,target),\
@@ -63,8 +63,12 @@ if __name__ == "__main__":
     
     # TABLE OF THRESHOLD COUNTS
     """
+    virus = 'global'      # Select: 'SARS2', 'SARS', 'MERS', 'global'
+    target = 'glide'   # Select: '7rnwA1', '2gx4A1', '7eneC1', 'glide'
     create_df_gscore_vs_tanimoto(files_dir='/home/cactus/julia/gensim/full/', specific_set='/home/cactus/julia/gensim/full/full_init_spec_set.smi', virus=virus, target='%s_docking'%target)
+    """
     
+    """
     tables = ['/home/cactus/julia/gensim/full/SARS2_df_gscore_tanimoto.csv',\
                 '/home/cactus/julia/gensim/full/SARS_df_gscore_tanimoto.csv',\
                 '/home/cactus/julia/gensim/full/MERS_df_gscore_tanimoto.csv']
@@ -81,6 +85,8 @@ if __name__ == "__main__":
                                 outdir='/home/cactus/julia/gensim/full/plots', outname='specific_set_evolution')
     superpose_specific_set_evolution(results_dir_1='/home/cactus/julia/gensim/full',\
                                      results_dir_2='/home/cactus/julia/gensim/selective',\
+                                     gscore_values_1=[-7.5, -7.6, -7.7, -7.7, -7.8, -7.9, -7.9, -7.9, -8.0, -8.0],\
+                                     gscore_values_2=[-7.5, -7.6, -7.7, -7.8, -7.9, -7.9, -8.0, -8.1, -8.2, -8.2],\
                                      outdir='/home/cactus/julia/gensim/Mpro_GMN/plots', outname='specific_set_evolution_full_sel')
     """
     
@@ -92,6 +98,7 @@ if __name__ == "__main__":
     sdf_list.insert(0, '/home/cactus/julia/gensim/full/full_init_spec_set.smi')   
     simplify_specific_sets_smi(list_spec_set=sdf_list)
     """
+    
     """
     sdf_list = glob.glob('/home/cactus/julia/gensim/full/outer?/full_spec_set_outer?_simple.smi')
     sdf_list.sort(reverse=True)
@@ -166,13 +173,16 @@ if __name__ == "__main__":
     """
     
     # GET TABLE OF RESULTS
+    """
     map_gscores_generated(csv_global='/home/cactus/julia/gensim/full/global_df_gscore_tanimoto.csv',\
                       csv_virus=['/home/cactus/julia/gensim/full/SARS2_df_gscore_tanimoto.csv',\
                       '/home/cactus/julia/gensim/full/SARS_df_gscore_tanimoto.csv',\
                       '/home/cactus/julia/gensim/full/MERS_df_gscore_tanimoto.csv'],\
                       outdir='/home/cactus/julia/gensim/full', outname='results')
-
+    """
+    
     # CLUSTER DBSCAN
+    #"""
     plot_cluster_DBSCAN(csv_results='/home/cactus/julia/gensim/full/results.csv',
                         smi_specific='/home/cactus/julia/gensim/full/full_init_spec_set.smi',
                         gscore_glob_thr=-8,
@@ -188,3 +198,22 @@ if __name__ == "__main__":
                        tanimoto_thr=0.3,
                        similarity_thrs=[0.7, 0.6, 0.5, 0.4, 0.3],
                        outname='plots/perc_newscaffolds_full')    
+    #"""
+    exit()
+    # APPLY THRESHOLDS
+    glob_gscores = [-7, -7.5, -8, -8.5, -9, -9.5, -10]
+    ind_gscores = [-6.5, -7, -7.5, -8, -8.5, -9, -9.5]
+    df = pd.read_csv('/home/cactus/julia/gensim/full/results.csv')
+    for i in range(7):
+        df_filt = df[(df['global_gscore'] <= glob_gscores[i]) & (df['gscore_SARS2'] <= ind_gscores[i]) & (df['gscore_SARS'] <= ind_gscores[i]) & (df['gscore_MERS'] <= ind_gscores[i])  & (df['max_tan'] <= 0.3)]
+        print(len(df_filt))
+    exit()
+
+    # FILTER CSV RESULTS FOR ALEXIS
+    indv = -7
+    glo = -7.5
+    csv_results = '/home/cactus/julia/gensim/full/results.csv'
+    df = pd.read_csv(csv_results)
+    df_filt = df[(df['global_gscore'] <= glo) & (df['gscore_SARS2'] <= indv) & (df['gscore_SARS'] <= indv) & (df['gscore_MERS'] <= indv)  & (df['max_tan'] <= 0.3)]
+    print(df_filt)
+    df_filt.to_csv('/home/cactus/julia/gensim/full/results_filt_full.csv', index=False)
