@@ -12,7 +12,7 @@ def extract_ligand_best_poses(csv_file, maegz_files, output_dir, outname):
 
     for index, row in df.iterrows():
         outer = row['id'].split('_')[0]
-        print(outer)
+        print('Outer: ', outer)
         # Find the corresponding maegz file for outer round
         maegz_file = maegz_files[int(outer)-1]
         print(maegz_file)
@@ -34,10 +34,8 @@ def extract_ligand_best_poses(csv_file, maegz_files, output_dir, outname):
 
                 if prop != 'r_i_glide_gscore': continue
                 st_gscore = s.property[prop]
-                st_gscore = round(st_gscore, 2)
-                #print(title, st_gscore)
-                if st_gscore != round(gscores, 2): continue
-                print(round(gscores,2), st_gscore)
+                if round(st_gscore, 3) != round(gscores, 3): continue
+                print(round(gscores, 3), round(st_gscore, 3))
 
                 # change maegz title
                 s.title = row['id']
@@ -49,13 +47,15 @@ def extract_ligand_best_poses(csv_file, maegz_files, output_dir, outname):
 
 if __name__ == '__main__':
 
+    virus = 'MERS' # Choose from: 'SARS2', 'SARS', 'MERS'
+    target = '7eneC1' # Choose from: '7rnwA1', '2gx4A1', '7eneC1'
     csv_file = '/home/cactus/julia/gensim/full/final_output_full_highPAINS_ADMET_mapped.csv'
-    maegz_files = glob.glob('/home/cactus/julia/gensim/full/glide?/docking/SARS2_*.maegz')
+    maegz_files = glob.glob('/home/cactus/julia/gensim/full/glide?/docking/%s_*.maegz'%virus)
     maegz_files.sort()
     maegz_files = maegz_files[1:]
-    maegz_files.append('/home/cactus/julia/gensim/full/glide10/docking/SARS2_7rnwA1_docking_pv.maegz')
+    maegz_files.append('/home/cactus/julia/gensim/full/glide10/docking/%s_%s_docking_pv.maegz'%(virus, target))
     outdir = '/home/cactus/julia/gensim/full/'
-    outname = 'SARS2_ligands_filtered.maegz'
+    outname = '%s_ligands_filtered.maegz'%virus
 
     extract_ligand_best_poses(csv_file, maegz_files, outdir, outname)
 
