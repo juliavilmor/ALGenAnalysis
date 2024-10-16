@@ -331,3 +331,17 @@ def plot_new_scaffolds(csv_results,
     plt.legend()
     plt.ylim((0, 110))
     plt.savefig(outname+'.pdf')
+    
+def map_ids_filtered_PAINS_ADMET_mols(csv_results, pains_admet_csv, outname):
+    df = pd.read_csv(csv_results)
+    pains_admet = pd.read_csv(pains_admet_csv)
+    df = df.rename(columns={'SMILES_SARS':'canon_smiles'})
+    df_map = pd.merge(pains_admet, df, on=['canon_smiles'])
+    df_map = df_map[['id', 'canon_smiles', 'ad_Carcino', 'Predicted_Labels_Carcino',
+                     'Predicted_Probabilities_Carcino', 'ad_cyp1a2_inhib',
+                     'Predicted_Labels_cyp1a2_inhib', 'Predicted_Probabilities_cyp1a2_inhib',
+                     'ad_herg', 'Predicted_Labels_herg', 'Predicted_Probabilities_herg',
+                     'max_tan', 'global_gscore', 'gscore_SARS2', 'gscore_SARS', 'gscore_MERS']]
+
+    df_map.to_csv(outname, index=False)
+    

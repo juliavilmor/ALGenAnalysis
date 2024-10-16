@@ -1,6 +1,7 @@
 from gensim_analysis import *
 from glide_analysis import *
 from final_selection import *
+from mycolorpy import colorlist as mcp
 
 if __name__ == "__main__":
     
@@ -204,16 +205,17 @@ if __name__ == "__main__":
     """
     
     # APPLY THRESHOLDS
+    """
     glob_gscores = [-7, -7.5, -8, -8.5, -9, -9.5, -10]
     ind_gscores = [-6.5, -7, -7.5, -8, -8.5, -9, -9.5]
     df = pd.read_csv('/home/cactus/julia/gensim/selective/results.csv')
     for i in range(7):
         df_filt = df[(df['global_gscore'] <= glob_gscores[i]) & (df['gscore_SARS2'] <= ind_gscores[i]) & (df['gscore_SARS'] <= ind_gscores[i]) & (df['gscore_MERS'] <= ind_gscores[i])  & (df['max_tan'] <= 0.3)]
         print(len(df_filt))
-    exit()
-        
+    """       
   
     # FILTER CSV RESULTS FOR ALEXIS
+    """
     indv = -7
     glo = -7.5
     csv_results = '/home/cactus/julia/gensim/selective/results.csv'
@@ -221,3 +223,36 @@ if __name__ == "__main__":
     df_filt = df[(df['global_gscore'] <= glo) & (df['gscore_SARS2'] <= indv) & (df['gscore_SARS'] <= indv) & (df['gscore_MERS'] <= indv)  & (df['max_tan'] <= 0.3)]
     print(df_filt)
     df_filt.to_csv('/home/cactus/julia/gensim/selective/results_filt_selective.csv', index=False)
+    """
+    
+    # GET SMILES FOR FILTERED PAINS ADMET MOLECULES
+    """
+    get_smi_files_from_csv(csv_file='/home/cactus/julia/gensim/selective/final_output_selective_highPAINS_ADMET.csv',
+                           smi_column='canon_smiles', outdir='/home/cactus/julia/gensim/selective')
+    """
+    
+    # PLOT THE FILTERED PAINS ADMET MOLECULES TO THE UMAP
+    """
+    sdf_list = glob.glob('/home/cactus/julia/gensim/selective/outer?/sel_spec_set_outer?_simple.smi')
+    sdf_list.sort(reverse=True)
+    sdf_list.insert(0, '/home/cactus/julia/gensim/selective/outer10/sel_spec_set_outer10_simple.smi')
+    sdf_list.append('/home/cactus/julia/gensim/selective/sel_init_spec_set.smi')
+    sdf_list.append('/home/cactus/julia/gensim/selective/final_output_selective_highPAINS_ADMET.smi')
+
+    names = ['outer10', 'outer9', 'outer8', 'outer7', 'outer6', 'outer5', 'outer4', 'outer3', 'outer2', 'outer1', 'filtered']
+    sizes = [0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4]
+    alphas = [0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9]
+    markers = ["o", "o", "o", "o", "o", "o", "o", "o", "o", "*", "X"]
+    total = len(sdf_list)
+    colors = mcp.gen_color(cmap="YlGnBu", n=total+1)
+    colors = colors[3:total+1]
+    colors = colors + ['red'] + ['fuchsia']
+
+    plot_UMAP(list_smis=sdf_list, list_names=names, outdir='/home/cactus/julia/gensim/selective/plots', outname='UMAP_spec_sets_filtered',\
+              sizes=sizes, alphas=alphas, markers=markers, colors=colors)
+    """
+    
+    # MAP IDS TO THE FINAL OUTPUT PAINS ADMET CSV FILE
+    map_ids_filtered_PAINS_ADMET_mols('/home/cactus/julia/gensim/selective/results_filt_selective.csv',
+                                      '/home/cactus/julia/gensim/selective/final_output_selective_highPAINS_ADMET.csv',
+                                      '/home/cactus/julia/gensim/selective/final_output_selective_highPAINS_ADMET_mapped.csv')
