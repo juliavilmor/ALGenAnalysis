@@ -262,14 +262,14 @@ def plot_modbs_tSNE_or_UMAP(list_of_sdfs, list_of_names, outdir, outname, sizes,
                             linewidth = 0)
                 print('UMAP with parameters md %s and nn %s done!'%(neighbours[j], min_dists[i]))
 
-def get_smi_files_from_csv(csv_file, outdir):
+def get_smi_files_from_csv(csv_file, smi_column, outdir):
     """It gets the smiles from a csv file and saves them into a smi file."""
     
     df = pd.read_csv(csv_file)
     outname = os.path.basename(csv_file).replace('.csv', '.smi')
     with open('%s/%s'%(outdir, outname), 'w') as f:
         for index, row in df.iterrows():
-            f.write('%s\n'%row['SMILE'])
+            f.write('%s\n'%row[smi_column])
     print('smi file created successfully')
     
 def remove_duplicates_from_sdf(sdf_file):
@@ -279,13 +279,16 @@ def remove_duplicates_from_sdf(sdf_file):
     mols.saveToSdf(sdf_file.replace('.sdf', '_unique'))
     print('Duplicates removed successfully')
     
-def plot_UMAP(list_smis, list_names, outdir, outname, sizes, alphas, markers):
+def plot_UMAP(list_smis, list_names, outdir, outname, sizes, alphas, markers, colors=None):
     """It plots the tSNE of all the sets indicated in the list."""
     total = len(list_smis)
     mol_list = [moldb.MolDB(smiDB=smi, verbose=False) for smi in list_smis]
-    colors = mcp.gen_color(cmap="YlGnBu", n=total+1)
-    colors = colors[2:total+1]
-    colors = colors + ['red']
+    if colors:
+        colors = colors
+    else:
+        colors = mcp.gen_color(cmap="YlGnBu", n=total+1)
+        colors = colors[2:total+1]
+        colors = colors + ['red']
     
     # If there are empty files (because there is no new generated molecules)
     # remove them from the lists
