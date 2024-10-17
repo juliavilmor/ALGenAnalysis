@@ -4,7 +4,7 @@ import glob
 import os
 
 
-def extract_ligand_best_poses(csv_file, maegz_files, output_dir, outname):
+def extract_ligand_best_poses(csv_file, maegz_files, output_dir, outname, virus):
     """This function extracts the glide ligand poses from maegz files based on the gscore in the csv file."""
 
     df = pd.read_csv(csv_file)
@@ -26,7 +26,7 @@ def extract_ligand_best_poses(csv_file, maegz_files, output_dir, outname):
 
             ids = row['id'].split('_')[1:]
             ids = '_'.join(ids)             # Title in csv file
-            gscores = row['gscore_SARS2']
+            gscores = row['gscore_%s'%virus]
 
             if title != ids: continue
             print(title, ids)
@@ -39,7 +39,7 @@ def extract_ligand_best_poses(csv_file, maegz_files, output_dir, outname):
 
                 # change maegz title
                 s.title = row['id']
-
+                
                 writer.append(s)
         m.close()
     writer.close()
@@ -57,6 +57,6 @@ if __name__ == '__main__':
     outdir = '/home/cactus/julia/gensim/full/'
     outname = '%s_ligands_filtered.maegz'%virus
 
-    extract_ligand_best_poses(csv_file, maegz_files, outdir, outname)
+    extract_ligand_best_poses(csv_file, maegz_files, outdir, outname, virus)
 
 
