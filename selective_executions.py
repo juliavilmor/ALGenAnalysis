@@ -233,7 +233,7 @@ if __name__ == "__main__":
     """
     
     # PLOT THE FILTERED PAINS ADMET MOLECULES TO THE UMAP
-    #"""
+    """
     sdf_list = glob.glob('/home/cactus/julia/gensim/selective/outer?/sel_spec_set_outer?_simple.smi')
     sdf_list.sort(reverse=True)
     sdf_list.insert(0, '/home/cactus/julia/gensim/selective/outer10/sel_spec_set_outer10_simple.smi')
@@ -250,14 +250,51 @@ if __name__ == "__main__":
     colors = colors[3:total+1]
     colors = colors + ['red'] + ['fuchsia']
 
-    # plot_UMAP(list_smis=sdf_list, list_names=names, outdir='/home/cactus/julia/gensim/selective/plots', outname='UMAP_spec_sets_filtered',\
-    #           sizes=sizes, alphas=alphas, markers=markers, colors=colors)
+    plot_UMAP(list_smis=sdf_list, list_names=names, outdir='/home/cactus/julia/gensim/selective/plots', outname='UMAP_spec_sets_filtered',\
+              sizes=sizes, alphas=alphas, markers=markers, colors=colors)
     plot_tSNE(list_smis=sdf_list, list_names=names, outdir='/home/cactus/julia/gensim/selective/plots', outname='tSNE_spec_sets_filtered',\
                 sizes=sizes, alphas=alphas, markers=markers, colors=colors)
-    #"""
-    exit()
+    """
     
     # MAP IDS TO THE FINAL OUTPUT PAINS ADMET CSV FILE
+    """
     map_ids_filtered_PAINS_ADMET_mols('/home/cactus/julia/gensim/selective/results_filt_selective.csv',
                                       '/home/cactus/julia/gensim/selective/final_output_selective_highPAINS_ADMET.csv',
                                       '/home/cactus/julia/gensim/selective/final_output_selective_highPAINS_ADMET_mapped.csv')
+    """
+    
+    # GET INTERACTION FINGERPRINTS
+    from MolecularAnalysis.utils.interactions import InteractionFingerprints
+    SARS2_pdbfile = '/home/cactus/julia/gensim/selective/glide1/structures/SARS2_7rnwA1_prep.pdb'
+    SARS2_sdffile = '/home/cactus/julia/gensim/selective/maestro_molecules/SARS2_ligands_filtered_sel.sdf'
+    SARS_pdbfile = '/home/cactus/julia/gensim/selective/glide1/structures/SARS_2gx4A1_prep.pdb'
+    SARS_sdffile = '/home/cactus/julia/gensim/selective/maestro_molecules/SARS_ligands_filtered_sel.sdf'
+    MERS_pdbfile = '/home/cactus/julia/gensim/selective/glide1/structures/MERS_7eneC1_prep.pdb'
+    MERS_sdffile = '/home/cactus/julia/gensim/selective/maestro_molecules/MERS_ligands_filtered_sel.sdf'
+    
+    int_fps_SARS2 = InteractionFingerprints(SARS2_pdbfile, SARS2_sdffile)
+    int_fps_SARS2.to_pickle('/home/cactus/julia/gensim/selective/int_fingerprints/SARS2_int_fps.pkl')
+    int_fps_SARS2.plot_barcode('/home/cactus/julia/gensim/selective/plots/SARS2_int_fps_barcode.png')
+    int_fps_SARS2.plot_clustermap('/home/cactus/julia/gensim/selective/plots/SARS2_int_fps_clustermap.png')
+    int_fps_SARS2.get_int_perc(plot='/home/cactus/julia/gensim/selective/plots/SARS2_int_fps_perc_heatmap.png')
+    int_fps_SARS2.get_int_res_perc(plot='/home/cactus/julia/gensim/selective/plots/SARS2_int_fps_res_perc_heatmap.png')
+    int_fps_SARS2.plot_pair_similarity_dist('/home/cactus/julia/gensim/selective/plots/SARS2_int_fps_pair_similarity_dist.png')
+    int_fps_SARS2.get_numdiff_interactions()
+    
+    int_fps_SARS = InteractionFingerprints(SARS_pdbfile, SARS_sdffile)
+    int_fps_SARS.to_pickle('/home/cactus/julia/gensim/selective/int_fingerprints/SARS_int_fps.pkl')
+    int_fps_SARS.plot_barcode('/home/cactus/julia/gensim/selective/plots/SARS_int_fps_barcode.png')
+    int_fps_SARS.plot_clustermap('/home/cactus/julia/gensim/selective/plots/SARS_int_fps_clustermap.png')
+    int_fps_SARS.get_int_perc(plot='/home/cactus/julia/gensim/selective/plots/SARS_int_fps_perc_heatmap.png')
+    int_fps_SARS.get_int_res_perc(plot='/home/cactus/julia/gensim/selective/plots/SARS_int_fps_res_perc_heatmap.png')
+    int_fps_SARS.plot_pair_similarity_dist('/home/cactus/julia/gensim/selective/plots/SARS_int_fps_pair_similarity_dist.png')
+    int_fps_SARS.get_numdiff_interactions()
+    
+    int_fps_MERS = InteractionFingerprints(MERS_pdbfile, MERS_sdffile)
+    int_fps_MERS.to_pickle('/home/cactus/julia/gensim/selective/int_fingerprints/MERS_int_fps.pkl')
+    int_fps_MERS.plot_barcode('/home/cactus/julia/gensim/selective/plots/MERS_int_fps_barcode.png')
+    int_fps_MERS.plot_clustermap('/home/cactus/julia/gensim/selective/plots/MERS_int_fps_clustermap.png')
+    int_fps_MERS.get_int_perc(plot='/home/cactus/julia/gensim/selective/plots/MERS_int_fps_perc_heatmap.png')
+    int_fps_MERS.get_int_res_perc(plot='/home/cactus/julia/gensim/selective/plots/MERS_int_fps_res_perc_heatmap.png')
+    int_fps_MERS.plot_pair_similarity_dist('/home/cactus/julia/gensim/selective/plots/MERS_int_fps_pair_similarity_dist.png')
+    int_fps_MERS.get_numdiff_interactions()
