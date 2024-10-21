@@ -309,6 +309,36 @@ def plot_UMAP(list_smis, list_names, outdir, outname, sizes, alphas, markers, co
                         random_max = 50000, delimiter = None, alg = 'Morgan4', colors = colors, sizes = sizes,  alphas = alphas,\
                         min_dist = min_dists[i], n_neighbors = neighbours[j], n_epochs = 10000, markers = markers, figsize = (9,6), \
                         linewidth = 0)
+
+def plot_tSNE(list_smis, list_names, outdir, outname, sizes, alphas, markers, colors=None):
+    """It plots the tSNE of all the sets indicated in the list."""
+    total = len(list_smis)
+    mol_list = [moldb.MolDB(smiDB=smi, verbose=False) for smi in list_smis]
+    if colors:
+        colors = colors
+    else:
+        colors = mcp.gen_color(cmap="YlGnBu", n=total+1)
+        colors = colors[2:total+1]
+        colors = colors + ['red']
+    
+    # If there are empty files (because there is no new generated molecules)
+    # remove them from the lists
+    len_moldb = [len(mol.mols) for mol in mol_list]
+    index_del = [i for i, x in enumerate(len_moldb) if x == 0]
+    list_names = [i for j, i in enumerate(list_names) if j not in index_del]
+    sizes  = [i for j, i in enumerate(sizes) if j not in index_del]
+    alphas  = [i for j, i in enumerate(alphas) if j not in index_del]
+    markers  = [i for j, i in enumerate(markers) if j not in index_del]
+    colors = [i for j, i in enumerate(colors) if j not in index_del]
+    mol_list = [i for j, i in enumerate(mol_list) if j not in index_del]
+    
+    perplexities = [10, 20, 30, 40]
+    
+    for i in range(len(perplexities)):
+        plot.plotTSNE(dbs = mol_list, names = list_names, output='%s/%s_pp%s'%(outdir, outname, perplexities[i]),\
+                        random_max = 10000, delimiter = None, alg = 'Morgan4', colors = colors,\
+                        sizes=sizes, alphas=alphas, linewidth=0, n_iter=1000, perplexity=perplexities[i],\
+                        early_exaggeration=12,learning_rate='auto', markers=markers, figsize=(9,6))       
         
 def plot_specific_set_evolution(results_dir, outdir, outname):
     """It plots the evolution of the specific set."""

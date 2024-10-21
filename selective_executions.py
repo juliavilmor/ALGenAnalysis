@@ -123,12 +123,13 @@ if __name__ == "__main__":
     sdf_list = glob.glob('/home/cactus/julia/gensim/selective/outer?/sel_spec_set_outer?_simple.smi')
     sdf_list.sort(reverse=True)
     sdf_list.insert(0, '/home/cactus/julia/gensim/selective/outer10/sel_spec_set_outer10_simple.smi')
+    sdf_list.insert(0, '/home/cactus/julia/gensim/selective/outer11/specific_set.smi')
     sdf_list.append('/home/cactus/julia/gensim/selective/sel_init_spec_set.smi')
 
-    names = ['outer10', 'outer9', 'outer8', 'outer7', 'outer6', 'outer5', 'outer4', 'outer3', 'outer2', 'outer1']
-    sizes = [0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4]
-    alphas = [0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9]
-    markers = ["o", "o", "o", "o", "o", "o", "o", "o", "o", "*"]
+    names = ['outer10', 'outer9', 'outer8', 'outer7', 'outer6', 'outer5', 'outer4', 'outer3', 'outer2', 'outer1', 'initial specific']
+    sizes = [0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4]
+    alphas = [0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9]
+    markers = ["o", "o", "o", "o", "o", "o", "o", "o", "o", "o", "*"]
     
     plot_UMAP(list_smis=sdf_list, list_names=names, outdir='/home/cactus/julia/gensim/selective/plots', outname='UMAP_spec_sets',\
               sizes=sizes, alphas=alphas, markers=markers)
@@ -232,25 +233,29 @@ if __name__ == "__main__":
     """
     
     # PLOT THE FILTERED PAINS ADMET MOLECULES TO THE UMAP
-    """
+    #"""
     sdf_list = glob.glob('/home/cactus/julia/gensim/selective/outer?/sel_spec_set_outer?_simple.smi')
     sdf_list.sort(reverse=True)
     sdf_list.insert(0, '/home/cactus/julia/gensim/selective/outer10/sel_spec_set_outer10_simple.smi')
+    sdf_list.insert(0, '/home/cactus/julia/gensim/selective/outer11/specific_set.smi')
     sdf_list.append('/home/cactus/julia/gensim/selective/sel_init_spec_set.smi')
-    sdf_list.append('/home/cactus/julia/gensim/selective/final_output_selective_highPAINS_ADMET.smi')
+    sdf_list.append('/home/cactus/julia/gensim/selective/PAINS_ADMET/final_output_selective_highPAINS_ADMET.smi')
 
-    names = ['outer10', 'outer9', 'outer8', 'outer7', 'outer6', 'outer5', 'outer4', 'outer3', 'outer2', 'outer1', 'filtered']
-    sizes = [0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4]
-    alphas = [0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9]
-    markers = ["o", "o", "o", "o", "o", "o", "o", "o", "o", "*", "X"]
+    names = ['outer10', 'outer9', 'outer8', 'outer7', 'outer6', 'outer5', 'outer4', 'outer3', 'outer2', 'outer1', 'initial specific', 'filtered']
+    sizes = [0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4]
+    alphas = [0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9]
+    markers = ["o", "o","o", "o", "o", "o", "o", "o", "o", "o", "*", "X"]
     total = len(sdf_list)
     colors = mcp.gen_color(cmap="YlGnBu", n=total+1)
     colors = colors[3:total+1]
     colors = colors + ['red'] + ['fuchsia']
 
-    plot_UMAP(list_smis=sdf_list, list_names=names, outdir='/home/cactus/julia/gensim/selective/plots', outname='UMAP_spec_sets_filtered',\
-              sizes=sizes, alphas=alphas, markers=markers, colors=colors)
-    """
+    # plot_UMAP(list_smis=sdf_list, list_names=names, outdir='/home/cactus/julia/gensim/selective/plots', outname='UMAP_spec_sets_filtered',\
+    #           sizes=sizes, alphas=alphas, markers=markers, colors=colors)
+    plot_tSNE(list_smis=sdf_list, list_names=names, outdir='/home/cactus/julia/gensim/selective/plots', outname='tSNE_spec_sets_filtered',\
+                sizes=sizes, alphas=alphas, markers=markers, colors=colors)
+    #"""
+    exit()
     
     # MAP IDS TO THE FINAL OUTPUT PAINS ADMET CSV FILE
     map_ids_filtered_PAINS_ADMET_mols('/home/cactus/julia/gensim/selective/results_filt_selective.csv',
