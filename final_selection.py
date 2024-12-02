@@ -237,7 +237,7 @@ def plot_cluster_DBSCAN(csv_results,
                         tanimoto_thr,
                         similarity_thrs,
                         outname):
-    plt.figure()
+    plt.figure(figsize=(8,6), dpi=200)
     for sim_thr in similarity_thrs:
         print(sim_thr)
         num_clusters, x_values = cluster_DBSCAN(csv_results=csv_results,
@@ -251,7 +251,7 @@ def plot_cluster_DBSCAN(csv_results,
     plt.ylabel('DBSCAN scaffolds clusters')
     plt.title('Scaffold evolution along outer loops')
     plt.legend()
-    plt.savefig(outname+'.pdf')
+    plt.savefig(outname+'.png')
 
 def new_scaffolds(csv_results,
                   smi_specific,

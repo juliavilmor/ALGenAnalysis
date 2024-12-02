@@ -17,7 +17,7 @@ def get_best_glide_docking_pose(csv_file, to_csv=True):
  
     df = pd.read_csv(csv_file)
     df = df[df['SMILES'] != 'invalid_structure']
-    idx = df.groupby('title')['r_i_glide_gscore'].idxmin()
+    idx = df.groupby('title')['r_i_docking_score'].idxmin()
     df_best = df.loc[idx]
     print('The best pose for each compound has been obtained. Total: %s compounds'%len(df_best))
     
@@ -28,7 +28,7 @@ def plot_glide_scores(path_to_best_csv, insert_title, outdir, savefig=True):
     """Histogram of gscores."""
 
     df = pd.read_csv(path_to_best_csv)
-    sns.histplot(data=df, x='r_i_glide_gscore').set(title=insert_title)
+    sns.histplot(data=df, x='r_i_docking_score').set(title=insert_title)
     filename = os.path.basename(path_to_best_csv).replace('.csv', '_gscores.png')
     if savefig:
         plt.savefig('%s/%s'%(outdir, filename))
@@ -36,16 +36,16 @@ def plot_glide_scores(path_to_best_csv, insert_title, outdir, savefig=True):
 def superimpose_histograms(list_of_csvs, list_of_labels, insert_title, out, savefig=True, legend_loc='upper right', xlim=None, ylim=None):
     """Superimpose histograms to compare."""
 
-    plt.figure(figsize=(6,6))
+    plt.figure(figsize=(8, 6), dpi=200)
     total = len(list_of_csvs)
     colors = mcp.gen_color(cmap="YlGnBu", n=total+1)
     colors = colors[2:total+1]
     colors = ['red'] + colors
     for i, data in enumerate(list_of_csvs):
         df = pd.read_csv(data)
-        df = df[df['r_i_glide_gscore'] != 10000]
-        average = mean(df['r_i_glide_gscore'].tolist())
-        sns.histplot(data=df, x=df['r_i_glide_gscore'].astype(float), color=colors[i], label=list_of_labels[i], element='step', fill=False, bins=70)
+        df = df[df['r_i_docking_score'] != 10000]
+        average = mean(df['r_i_docking_score'].tolist())
+        sns.histplot(data=df, x=df['r_i_docking_score'].astype(float), color=colors[i], label=list_of_labels[i], element='step', fill=False, bins=70)
         plt.axvline(average, color=colors[i], linestyle=":")
     plt.legend(loc=legend_loc, frameon=False)
     plt.title(insert_title)
@@ -71,12 +71,12 @@ def get_mean_glide_gscores(list_of_csv, out):
     means = []
     smiles = []
     for lig in ligs:
-        mean_gscore = df.loc[df['title'] == lig]['r_i_glide_gscore'].mean()
+        mean_gscore = df.loc[df['title'] == lig]['r_i_docking_score'].mean()
         smile = df.loc[df['title'] == lig]['SMILES'].tolist()
         smile = smile[0] # some smiles differ from quirality. I selected the first one (corresponding to SARS2)
         means.append(mean_gscore)
         smiles.append(smile)
-    mean_df = pd.DataFrame(list(zip(ligs, smiles, means)), columns =['title',  'SMILES', 'r_i_glide_gscore'])
+    mean_df = pd.DataFrame(list(zip(ligs, smiles, means)), columns =['title',  'SMILES', 'r_i_docking_score'])
     print(mean_df)
     mean_df.to_csv('%s'%out, index=False)
 
@@ -85,7 +85,7 @@ def filter_by_glide_gscore(path_to_best_csv, gscore, outdir):
         As a result, it gives you a csv file and a smi file."""
 
     df = pd.read_csv(path_to_best_csv)
-    df_filt = df[df['r_i_glide_gscore'] < gscore]
+    df_filt = df[df['r_i_docking_score'] < gscore]
     print("From %s molecules, %s were removed.\nThe new set contains %s molecules."%(len(df), (len(df)-len(df_filt)), len(df_filt)))
 
     # save filtered dataframe
@@ -105,12 +105,12 @@ def filter_by_glide_gscore_paninhibitors(list_of_csvs, outdir, gscore_global=-6.
         virus = os.path.basename(glide).split('_')[0]
         receptor = os.path.basename(glide).split('_')[2]
         df = pd.read_csv(glide)
-        df = df[df['r_i_glide_gscore'] != 10000]
+        df = df[df['r_i_docking_score'] != 10000]
         df = df.drop_duplicates(subset='title')
         df['virus'] = virus
         df['receptor'] = receptor
         list_dfs.append(df)
-        gscores = df['r_i_glide_gscore'].tolist()
+        gscores = df['r_i_docking_score'].tolist()
         #plt.hist(gscores, bins=15, alpha=0.5)
         #plt.axvline(x = -5.9, color = 'r')
         #plt.savefig('hist_gscores.png')
@@ -120,11 +120,11 @@ def filter_by_glide_gscore_paninhibitors(list_of_csvs, outdir, gscore_global=-6.
     mean = {}
     for lig in ligs:
         # global threshold
-        mean_gscore = all_df.loc[all_df['title'] == lig]['r_i_glide_gscore'].mean()
+        mean_gscore = all_df.loc[all_df['title'] == lig]['r_i_docking_score'].mean()
         if mean_gscore < gscore_global:
 
             # individual threshold
-            ind_gscore = all_df.loc[all_df['title'] == lig]['r_i_glide_gscore'] < gscore_individual
+            ind_gscore = all_df.loc[all_df['title'] == lig]['r_i_docking_score'] < gscore_individual
             below = ind_gscore.tolist()
             if below == [True, True, True]:
                 mean[lig] = mean_gscore
@@ -143,7 +143,7 @@ def cumulative_histograms(final_csvs, initial_csvs, list_of_labels, list_of_colo
     colors = list_of_colors
     for i, data in enumerate(list_of_csvs):
         df = pd.read_csv(data)
-        df = df.rename(columns={'r_i_glide_gscore': 'gscore'})
+        df = df.rename(columns={'r_i_docking_score': 'gscore'})
         df = df[df['gscore'] != 10000]
         average = mean(df['gscore'].tolist())
         sns.histplot(data=df, x=df['gscore'].astype(float), color=colors[i], label=list_of_labels[i], element='step', fill=False, bins=70)
