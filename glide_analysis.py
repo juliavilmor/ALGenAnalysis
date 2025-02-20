@@ -2,6 +2,7 @@ from MolecularAnalysis import mol, moldb
 from MolecularAnalysis.analysis import plot
 import glob
 import os
+import shutil
 import pandas as pd
 import matplotlib.pyplot as plt
 from mycolorpy import colorlist as mcp
@@ -10,6 +11,79 @@ import seaborn as sns
 from rdkit import Chem
 from collections import Counter
 from statistics import mean
+
+def create_glide_docking_folder(destination_path, template_path="templates/glide_template", ligands_file_path=None):
+    """
+    Creates a new directory with the structure and files copied from a template directory.
+    
+    destination_path: Path where the new glide docking directory should be created.
+    template_path: Path to the template directory containing the required structure and files.
+    ligands_file_path: Path to the 'all_generated_molecules_unique.sdf' file to be copied into the ligands folder.
+    """
+    
+    if not os.path.exists(template_path):
+        raise FileNotFoundError(f"Template directory '{template_path}' does not exist.")
+    
+    if os.path.exists(destination_path):
+        raise FileExistsError(f"Destination directory '{destination_path}' already exists.")
+    
+    shutil.copytree(template_path, destination_path)
+    print(f"Glide docking folder created at: {destination_path}")
+    
+    # Copy the ligands file if provided
+    if ligands_file_path:
+        if not os.path.exists(ligands_file_path):
+            raise FileNotFoundError(f"Ligands file '{ligands_file_path}' does not exist.")
+        
+        ligands_dest = os.path.join(destination_path, "ligands", "all_generated_molecules_unique.sdf")
+        os.makedirs(os.path.dirname(ligands_dest), exist_ok=True)
+        shutil.copy(ligands_file_path, ligands_dest)
+        print(f"Ligands file copied to: {ligands_dest}")
+    
+def create_glide_run_script(destination_path, glide_files_path):
+    """
+    Creates a SLURM run script in the specified destination directory.
+    
+    destination_path: Path where the run script should be created.
+    glide_files_path: Path where the Glide docking files are located.
+    """
+    script_content = f"""#!/bin/bash
+#SBATCH --job-name=glide_docking
+#SBATCH --output=logs/glide_%j.out
+#SBATCH --error=logs/glide_%j.err
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=128
+#SBATCH --qos=bsc_ls
+#SBATCH --time=48:00:00
+#SBATCH --constraint=schrodinger
+##SBATCH -x amd02
+
+export LD_PRELOAD=/lib64/libcrypto.so.1.1.1k
+export PATH=$PATH:/gpfs/projects/bsc72/Programs/schrodinger2024-1
+export SCHRODINGER=/gpfs/projects/bsc72/Programs/schrodinger2024-1
+
+module load gcc openmpi greasy/2.2.3
+
+echo "Loaded modules: $(module list)"
+echo "Using SCHRODINGER directory: $SCHRODINGER"
+
+cd {glide_files_path}/ligands/
+$SCHRODINGER/ligprep -retain_i -ph 7.4 -pht 0.5 -bff 16 -g -s 4 -epik -isd all_generated_molecules_unique.sdf -osd all_generated_molecules_prep.mae -HOST localhost:32
+cd ..
+
+wait
+
+cd docking/
+$SCHRODINGER/glide MERS_7eneC1.in -adjust -HOST localhost:32
+$SCHRODINGER/glide SARS_2gx4A1.in -adjust -HOST localhost:32
+$SCHRODINGER/glide SARS2_7rnwA1.in -adjust -HOST localhost:32
+"""
+    
+    script_path = os.path.join(destination_path, "run_glide.sh")
+    with open(script_path, "w") as script_file:
+        script_file.write(script_content)
+    
+    print(f"Run script created at: {script_path}")
 
 def get_best_glide_docking_pose(csv_file, to_csv=True):
     """ I returns a df with the best poses for each ligand,
@@ -129,6 +203,8 @@ def filter_by_glide_gscore_paninhibitors(list_of_csvs, outdir, gscore_global=-6.
             if below == [True, True, True]:
                 mean[lig] = mean_gscore
                 smiles = all_df.loc[all_df['title'] == lig]['SMILES'].tolist()[0]
+                if not os.path.exists(outdir):
+                    os.mkdir(outdir)
                 smi_file = open('%s/specific_set.smi'%outdir, 'a')
                 smi_file.write('%s\n'%smiles)
                 smi_file.close()
