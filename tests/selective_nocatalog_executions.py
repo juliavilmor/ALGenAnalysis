@@ -6,35 +6,50 @@ from mycolorpy import colorlist as mcp
 if __name__ == "__main__":
 
     n = 'gensim_nocatalog'
-    resdir = '/home/cactus/julia/gensim/selective_nocatalog_pretrained/outer_3'
+    resdir = '/home/cactus/julia/gensim/selective_nocatalog_pretrained'
 
     # GENSIM ANALYSIS
-    #"""
+    """
+    outer_round = 5
+    resdir = resdir + '/outer_%d'%outer_round
+    
     get_all_generated_molecules(results_dir=resdir, outname=n)
 
     create_table_gm_counts(results_dir=resdir, outname=n, save_df=True)
-
     plot_all_props_in_one(results_dir=resdir, save_fig=True)
 
     convert_csv_to_sdf_file(csv_to_convert='%s/all_generated_molecules.csv'%resdir, outdir=resdir)
-
     remove_duplicates_from_sdf(sdf_file='%s/all_generated_molecules.sdf'%resdir)
-    #"""
-    exit()
+    """
+    
+    # RUN GLIDE DOCKING
+    """
+    glide_round = 5
+    create_glide_docking_folder(destination_path='%s/glide_%d'%(resdir, glide_round),\
+                                template_path='/home/cactus/julia/gensim/Mpro_GMN/templates/glide_Mpro_multitarget',\
+                                ligands_file_path='%s/outer_%d/all_generated_molecules_unique.sdf'%(resdir, glide_round))
+    create_glide_run_script(destination_path='.',\
+                            glide_files_path='%s/glide_%d'%(resdir, glide_round))
+    """
+    
     # GLIDE ANALYSIS
     #"""
-    glide_round = 2
-    get_best_glide_docking_pose(csv_file='/home/cactus/julia/gensim/selective_nocatalog/glide_%d/docking/SARS2_7rnwA1.csv'%glide_round)
-    get_best_glide_docking_pose(csv_file='/home/cactus/julia/gensim/selective_nocatalog/glide_%d/docking/SARS_2gx4A1.csv'%glide_round)
-    get_best_glide_docking_pose(csv_file='/home/cactus/julia/gensim/selective_nocatalog/glide_%d/docking/MERS_7eneC1.csv'%glide_round)
+    glide_round = 5
+    get_best_glide_docking_pose(csv_file='%s/glide_%d/docking/SARS2_7rnwA1.csv'%(resdir, glide_round))
+    get_best_glide_docking_pose(csv_file='%s/glide_%d/docking/SARS_2gx4A1.csv'%(resdir, glide_round))
+    get_best_glide_docking_pose(csv_file='%s/glide_%d/docking/MERS_7eneC1.csv'%(resdir, glide_round))
     
-    csvs = ['/home/cactus/julia/gensim/selective_nocatalog/glide_%d/docking/SARS2_7rnwA1_best.csv'%glide_round,\
-            '/home/cactus/julia/gensim/selective_nocatalog/glide_%d/docking/SARS_2gx4A1_best.csv'%glide_round,\
-            '/home/cactus/julia/gensim/selective_nocatalog/glide_%d/docking/MERS_7eneC1_best.csv'%glide_round]
-    filter_by_glide_gscore_paninhibitors(list_of_csvs=csvs, outdir=resdir.replace(str(glide_round), str(glide_round+1)), gscore_global=-7.6, gscore_individual=-7.1)
+    csvs = ['%s/glide_%d/docking/SARS2_7rnwA1_best.csv'%(resdir, glide_round),\
+            '%s/glide_%d/docking/SARS_2gx4A1_best.csv'%(resdir, glide_round),\
+            '%s/glide_%d/docking/MERS_7eneC1_best.csv'%(resdir, glide_round)]
+    
+    resdir = resdir + '/outer_%d'%glide_round
+    filter_by_glide_gscore_paninhibitors(list_of_csvs=csvs, outdir=resdir.replace(str(glide_round), str(glide_round+1)), gscore_global=-7.9, gscore_individual=-7.4)
     #"""
     exit()
+    
     # TEST: Apply catalogs to this no catalog restuls
+    """
     from molecular_filters.molecular_filters import filter_PAINS, filter_Brenk, filter_NIH, filter_REOS
     molecules = open('/home/cactus/julia/gensim/selective_nocatalog_training/outer_2/specific_set.smi', 'r').read().splitlines()
     valid_smiles = []
@@ -50,8 +65,8 @@ if __name__ == "__main__":
         valid_smiles.append(smile)
     print('Total valid smiles: ', len(valid_smiles))
     print(valid_smiles)
+    """
     
-    exit()
     # get global gscores
     """
     for i in range(11):
@@ -363,39 +378,3 @@ if __name__ == "__main__":
                                       '/home/cactus/julia/gensim/selective/final_output_selective_highPAINS_ADMET.csv',
                                       '/home/cactus/julia/gensim/selective/final_output_selective_highPAINS_ADMET_mapped.csv')
     """
-    
-    # GET INTERACTION FINGERPRINTS
-    from MolecularAnalysis.utils.interactions import InteractionFingerprints
-    SARS2_pdbfile = '/home/cactus/julia/gensim/selective/glide1/structures/SARS2_7rnwA1_prep.pdb'
-    SARS2_sdffile = '/home/cactus/julia/gensim/selective/maestro_molecules/SARS2_ligands_filtered_sel.sdf'
-    SARS_pdbfile = '/home/cactus/julia/gensim/selective/glide1/structures/SARS_2gx4A1_prep.pdb'
-    SARS_sdffile = '/home/cactus/julia/gensim/selective/maestro_molecules/SARS_ligands_filtered_sel.sdf'
-    MERS_pdbfile = '/home/cactus/julia/gensim/selective/glide1/structures/MERS_7eneC1_prep.pdb'
-    MERS_sdffile = '/home/cactus/julia/gensim/selective/maestro_molecules/MERS_ligands_filtered_sel.sdf'
-    
-    int_fps_SARS2 = InteractionFingerprints(SARS2_pdbfile, SARS2_sdffile)
-    int_fps_SARS2.to_pickle('/home/cactus/julia/gensim/selective/int_fingerprints/SARS2_int_fps.pkl')
-    int_fps_SARS2.plot_barcode('/home/cactus/julia/gensim/selective/plots/SARS2_int_fps_barcode.png')
-    int_fps_SARS2.plot_clustermap('/home/cactus/julia/gensim/selective/plots/SARS2_int_fps_clustermap.png')
-    int_fps_SARS2.get_int_perc(plot='/home/cactus/julia/gensim/selective/plots/SARS2_int_fps_perc_heatmap.png')
-    int_fps_SARS2.get_int_res_perc(plot='/home/cactus/julia/gensim/selective/plots/SARS2_int_fps_res_perc_heatmap.png')
-    int_fps_SARS2.plot_pair_similarity_dist('/home/cactus/julia/gensim/selective/plots/SARS2_int_fps_pair_similarity_dist.png')
-    int_fps_SARS2.get_numdiff_interactions()
-    
-    int_fps_SARS = InteractionFingerprints(SARS_pdbfile, SARS_sdffile)
-    int_fps_SARS.to_pickle('/home/cactus/julia/gensim/selective/int_fingerprints/SARS_int_fps.pkl')
-    int_fps_SARS.plot_barcode('/home/cactus/julia/gensim/selective/plots/SARS_int_fps_barcode.png')
-    int_fps_SARS.plot_clustermap('/home/cactus/julia/gensim/selective/plots/SARS_int_fps_clustermap.png')
-    int_fps_SARS.get_int_perc(plot='/home/cactus/julia/gensim/selective/plots/SARS_int_fps_perc_heatmap.png')
-    int_fps_SARS.get_int_res_perc(plot='/home/cactus/julia/gensim/selective/plots/SARS_int_fps_res_perc_heatmap.png')
-    int_fps_SARS.plot_pair_similarity_dist('/home/cactus/julia/gensim/selective/plots/SARS_int_fps_pair_similarity_dist.png')
-    int_fps_SARS.get_numdiff_interactions()
-    
-    int_fps_MERS = InteractionFingerprints(MERS_pdbfile, MERS_sdffile)
-    int_fps_MERS.to_pickle('/home/cactus/julia/gensim/selective/int_fingerprints/MERS_int_fps.pkl')
-    int_fps_MERS.plot_barcode('/home/cactus/julia/gensim/selective/plots/MERS_int_fps_barcode.png')
-    int_fps_MERS.plot_clustermap('/home/cactus/julia/gensim/selective/plots/MERS_int_fps_clustermap.png')
-    int_fps_MERS.get_int_perc(plot='/home/cactus/julia/gensim/selective/plots/MERS_int_fps_perc_heatmap.png')
-    int_fps_MERS.get_int_res_perc(plot='/home/cactus/julia/gensim/selective/plots/MERS_int_fps_res_perc_heatmap.png')
-    int_fps_MERS.plot_pair_similarity_dist('/home/cactus/julia/gensim/selective/plots/MERS_int_fps_pair_similarity_dist.png')
-    int_fps_MERS.get_numdiff_interactions()

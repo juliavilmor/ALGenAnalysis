@@ -6,31 +6,72 @@ from mycolorpy import colorlist as mcp
 if __name__ == "__main__":
     
     n = 'gensim_mt_sel'
-    resdir = '/home/cactus/julia/gensim/selective_new/outer_1_test2'
+    resdir = '/home/cactus/julia/gensim/selective_allfilters_pretrained'
     
     # GENSIM ANALYSIS
     """
+    outer_round = 5
+    resdir = resdir + '/outer_%d'%outer_round
+    
     get_all_generated_molecules(results_dir=resdir, outname=n)
     
     create_table_gm_counts(results_dir=resdir, outname=n, save_df=True)
-    
     plot_all_props_in_one(results_dir=resdir, save_fig=True)
     
     convert_csv_to_sdf_file(csv_to_convert='%s/all_generated_molecules.csv'%resdir, outdir=resdir)
     remove_duplicates_from_sdf(sdf_file='%s/all_generated_molecules.sdf'%resdir)
     """
     
+    # RUN GLIDE DOCKING
+    """
+    glide_round = 5
+    create_glide_docking_folder(destination_path='%s/glide_%d'%(resdir, glide_round),\
+                                template_path='/home/cactus/julia/gensim/Mpro_GMN/templates/glide_Mpro_multitarget',\
+                                ligands_file_path='%s/outer_%d/all_generated_molecules_unique.sdf'%(resdir, glide_round))
+    create_glide_run_script(destination_path='.',\
+                            glide_files_path='%s/glide_%d'%(resdir,glide_round))
+    """
+    
     # GLIDE ANALYSIS
     #"""
-    get_best_glide_docking_pose(csv_file='/home/cactus/julia/gensim/selective_new/glide_1_test2/docking_filtered_molecules/SARS2_7rnwA1.csv')
-    get_best_glide_docking_pose(csv_file='/home/cactus/julia/gensim/selective_new/glide_1_test2/docking_filtered_molecules/SARS_2gx4A1.csv')
-    get_best_glide_docking_pose(csv_file='/home/cactus/julia/gensim/selective_new/glide_1_test2/docking_filtered_molecules/MERS_7eneC1.csv')
+    glide_round = 5
+    get_best_glide_docking_pose(csv_file='%s/glide_%d/docking/SARS2_7rnwA1.csv'%(resdir, glide_round))
+    get_best_glide_docking_pose(csv_file='%s/glide_%d/docking/SARS_2gx4A1.csv'%(resdir, glide_round))
+    get_best_glide_docking_pose(csv_file='%s/glide_%d/docking/MERS_7eneC1.csv'%(resdir, glide_round))
     
-    csvs = ['/home/cactus/julia/gensim/selective_new/glide_1_test2/docking/SARS2_7rnwA1_best.csv',\
-            '/home/cactus/julia/gensim/selective_new/glide_1_test2/docking/SARS_2gx4A1_best.csv',\
-            '/home/cactus/julia/gensim/selective_new/glide_1_test2/docking/MERS_7eneC1_best.csv']
-    filter_by_glide_gscore_paninhibitors(list_of_csvs=csvs, outdir=resdir.replace('1', '2'), gscore_global=-7.5, gscore_individual=-7)
+    csvs = ['%s/glide_%d/docking/SARS2_7rnwA1_best.csv'%(resdir, glide_round),\
+            '%s/glide_%d/docking/SARS_2gx4A1_best.csv'%(resdir, glide_round),\
+            '%s/glide_%d/docking/MERS_7eneC1_best.csv'%(resdir, glide_round)]
+    
+    resdir = resdir + '/outer_%d'%glide_round
+    filter_by_glide_gscore_paninhibitors(list_of_csvs=csvs, outdir=resdir.replace(str(glide_round), str(glide_round+1)), gscore_global=-7.9, gscore_individual=-7.4)
     #"""
+    exit()
+    
+     # COMPARE ALLFILTERS VS. NOCATALOG GENERATIONS
+    """
+    sdf_list = ['/home/cactus/julia/gensim/selective_allfilters/outer_1/all_generated_molecules_unique.sdf',\
+                '/home/cactus/julia/gensim/selective_nocatalog/outer_1/all_generated_molecules_unique.sdf']
+    names = ['generated_allfilters', 'generated_nocatalog']
+    sizes = [0.3, 0.3]
+    alphas = [0.6, 0.6]
+    markers = ["o", "o"]
+    
+    plot_modbs_tSNE_or_UMAP(list_of_sdfs=sdf_list, list_of_names=names, outdir='/home/cactus/julia/gensim/selective_allfilters', outname='UMAP_allfilters_nocatalog',\
+                            sizes=sizes, alphas=alphas, markers=markers, ptype='UMAP')
+    """
+    
+    # COMPARE ALLFILTERS VS. NOCATALOG AFTER GLIDE THRESHOLD
+    """
+    smi_list = ['/home/cactus/julia/gensim/selective_allfilters/outer_2/specific_set.smi',\
+                '/home/cactus/julia/gensim/selective_nocatalog/outer_2/specific_set.smi']
+    names = ['allfilters', 'nocatalog']
+    sizes = [0.3, 0.3]
+    alphas = [0.6, 0.6]
+    markers = ["o", "o"]
+    plot_UMAP(list_smis=smi_list, list_names=names, outdir='/home/cactus/julia/gensim/selective_allfilters', outname='UMAP_alfilters_nocatalog_glide',\
+              sizes=sizes, alphas=alphas, markers=markers)
+    """
     exit()
     # get global gscores
     """
