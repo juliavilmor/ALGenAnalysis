@@ -27,7 +27,7 @@ def get_all_generated_molecules(results_dir, outname):
     all_generated = pd.concat(df_list)
     all_generated = all_generated.sort_values('inner')
     all_generated.to_csv('%s/all_generated_molecules.csv'%results_dir, index=False)
-    print('Total generated molecules: %s'%len(all_generated))
+    print('Total generated molecules thresholds: %s'%len(all_generated))
     
 
 def create_table_gm_counts(results_dir, outname, save_df=False):
@@ -91,6 +91,12 @@ def create_table_gm_counts(results_dir, outname, save_df=False):
     index_labels = ['specific', 'generated', 'thresholds', 'success_rate']
     df = pd.DataFrame(counts_dic, index=index_labels)
     print(df)
+    
+    # print the total number of molecules
+    total_molecules = df.loc['generated'].sum()
+    print('Total generated molecules: %s'%total_molecules)
+    total_thresholds = df.loc['thresholds'].sum()
+    print('Total molecules after thresholds: %s'%total_thresholds)
 
     if save_df:
         df.to_csv('%s/table_of_counts.csv'%results_dir)
@@ -278,6 +284,7 @@ def remove_duplicates_from_sdf(sdf_file):
     mols = moldb.MolDB(sdfDB=sdf_file, verbose=False)
     mols.saveToSdf(sdf_file.replace('.sdf', '_unique'))
     print('Duplicates removed successfully')
+    print('The new sdf file contains %s molecules'%len(mols.mols))
     
 def plot_UMAP(list_smis, list_names, outdir, outname, sizes, alphas, markers, colors=None):
     """It plots the tSNE of all the sets indicated in the list."""
