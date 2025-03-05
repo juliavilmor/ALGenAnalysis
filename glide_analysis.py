@@ -89,7 +89,7 @@ def get_best_glide_docking_pose(csv_file, to_csv=True):
     """ I returns a df with the best poses for each ligand,
         based on the glide gscore """
  
-    df = pd.read_csv(csv_file)
+    df = pd.read_csv(csv_file, on_bad_lines='skip')
     df = df[df['SMILES'] != 'invalid_structure']
     idx = df.groupby('title')['r_i_docking_score'].idxmin()
     df_best = df.loc[idx]
