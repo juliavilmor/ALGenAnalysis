@@ -84,6 +84,31 @@ $SCHRODINGER/glide SARS2_7rnwA1.in -adjust -HOST localhost:32
         script_file.write(script_content)
     
     print(f"Run script created at: {script_path}")
+    
+def create_glide_run_script_from_template(template_path, destination_path, glide_files_path):
+    """
+    Creates a SLURM run script based on a template file, replacing placeholders with actual values.
+    
+    template_path: Path to the template run script.
+    destination_path: Path where the modified run script should be created.
+    glide_files_path: Path where the Glide docking files are located.
+    """
+    
+    # Read the template file
+    with open(template_path, "r") as template_file:
+        script_content = template_file.read()
+    
+    # Replace placeholders with actual values
+    script_content = script_content.replace("{GLIDE_FILES_PATH}", glide_files_path)
+    
+    # Define the output script path
+    script_path = os.path.join(destination_path, "run_glide.sh")
+    
+    # Write the modified script to the destination path
+    with open(script_path, "w") as script_file:
+        script_file.write(script_content)
+    
+    print(f"Run script created at: {script_path}")
 
 def get_best_glide_docking_pose(csv_file, to_csv=True):
     """ I returns a df with the best poses for each ligand,
