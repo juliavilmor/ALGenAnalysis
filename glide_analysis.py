@@ -179,7 +179,7 @@ def get_mean_glide_gscores(list_of_csv, out):
     print(mean_df)
     mean_df.to_csv('%s'%out, index=False)
 
-def filter_by_glide_gscore(path_to_best_csv, gscore, outdir):
+def filter_by_glide_docking_score(path_to_best_csv, gscore, outdir):
     """ It filters the obtained molecules by glide score.
         As a result, it gives you a csv file and a smi file."""
 
@@ -193,6 +193,8 @@ def filter_by_glide_gscore(path_to_best_csv, gscore, outdir):
 
     # save smiles for the next round
     smiles = df_filt['SMILES'].tolist()
+    if not os.path.exists(outdir):
+        os.mkdir(outdir)
     smi_file = open('%s/genai_specific_set.smi'%outdir, 'w')
     for smile in smiles:
         smi_file.write('%s\n'%smile)
