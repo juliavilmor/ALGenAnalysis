@@ -127,6 +127,7 @@ def plot_glide_scores(path_to_best_csv, insert_title, outdir, savefig=True):
     """Histogram of gscores."""
 
     df = pd.read_csv(path_to_best_csv)
+    plt.figure(figsize=(10, 8), dpi=200)
     sns.histplot(data=df, x='r_i_docking_score').set(title=insert_title)
     filename = os.path.basename(path_to_best_csv).replace('.csv', '_gscores.png')
     if savefig:
