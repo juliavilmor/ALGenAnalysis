@@ -1,3 +1,6 @@
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from gensim_analysis import *
 from glide_analysis import *
 from final_selection import *
@@ -10,7 +13,7 @@ if __name__ == "__main__":
 
     # GENSIM ANALYSIS
     """
-    outer_round = 5
+    outer_round = 10
     resdir = resdir + '/outer_%d'%outer_round
     
     get_all_generated_molecules(results_dir=resdir, outname=n)
@@ -24,17 +27,17 @@ if __name__ == "__main__":
     
     # RUN GLIDE DOCKING
     """
-    glide_round = 5
+    glide_round = 10
     create_glide_docking_folder(destination_path='%s/glide_%d'%(resdir, glide_round),\
-                                template_path='/home/cactus/julia/gensim/Mpro_GMN/templates/glide_Mpro_multitarget',\
+                                template_path='/home/cactus/julia/gensim/ALGenAnalysis/templates/glide_Mpro_multitarget',\
                                 ligands_file_path='%s/outer_%d/all_generated_molecules_unique.sdf'%(resdir, glide_round))
     create_glide_run_script(destination_path='.',\
                             glide_files_path='%s/glide_%d'%(resdir, glide_round))
     """
     
     # GLIDE ANALYSIS
-    #"""
-    glide_round = 5
+    """
+    glide_round = 10
     get_best_glide_docking_pose(csv_file='%s/glide_%d/docking/SARS2_7rnwA1.csv'%(resdir, glide_round))
     get_best_glide_docking_pose(csv_file='%s/glide_%d/docking/SARS_2gx4A1.csv'%(resdir, glide_round))
     get_best_glide_docking_pose(csv_file='%s/glide_%d/docking/MERS_7eneC1.csv'%(resdir, glide_round))
@@ -44,14 +47,18 @@ if __name__ == "__main__":
             '%s/glide_%d/docking/MERS_7eneC1_best.csv'%(resdir, glide_round)]
     
     resdir = resdir + '/outer_%d'%glide_round
-    filter_by_glide_gscore_paninhibitors(list_of_csvs=csvs, outdir=resdir.replace(str(glide_round), str(glide_round+1)), gscore_global=-7.9, gscore_individual=-7.4)
-    #"""
-    exit()
+    filter_by_glide_gscore_paninhibitors(list_of_csvs=csvs, outdir=resdir.replace(str(glide_round), str(glide_round+1)), gscore_global=-8.3, gscore_individual=-7.8)
+    """
+    
     
     # TEST: Apply catalogs to this no catalog restuls
     """
     from molecular_filters.molecular_filters import filter_PAINS, filter_Brenk, filter_NIH, filter_REOS
-    molecules = open('/home/cactus/julia/gensim/selective_nocatalog_training/outer_2/specific_set.smi', 'r').read().splitlines()
+    generated_molecules = glob.glob('/home/cactus/julia/gensim/selective_nocatalog_pretrained/outer_*/specific_set.smi')
+    print(len(generated_molecules))
+    molecules = [x for sublist in [open(x).read().splitlines() for x in generated_molecules] for x in sublist]
+    print(len(molecules))
+    
     valid_smiles = []
     for smile in molecules:
         smile = filter_PAINS(smile)
@@ -69,105 +76,80 @@ if __name__ == "__main__":
     
     # get global gscores
     """
-    for i in range(11):
-        csvs = ['/home/cactus/julia/gensim/selective/glide%s/docking/SARS2_7rnwA1_best.csv'%i,\
-                '/home/cactus/julia/gensim/selective/glide%s/docking/SARS_2gx4A1_best.csv'%i,\
-                '/home/cactus/julia/gensim/selective/glide%s/docking/MERS_7eneC1_best.csv'%i]
-        get_mean_glide_gscores(list_of_csv=csvs, out='/home/cactus/julia/gensim/selective/glide%s/docking/global_glide_best.csv'%i)
+    for i in range(1,11):
+        csvs = ['%s/glide_%s/docking/SARS2_7rnwA1_best.csv'%(resdir,i),\
+                '%s/glide_%s/docking/SARS_2gx4A1_best.csv'%(resdir,i),\
+                '%s/glide_%s/docking/MERS_7eneC1_best.csv'%(resdir,i)]
+        get_mean_glide_gscores(list_of_csv=csvs, out='%s/glide_%s/docking/global_glide_best.csv'%(resdir,i))
         print('Glide %s done.'%i)
     """
-
+    
     # PLOT HISTOGRAMS OF GLIDE DOCKING SCORES
     """
     virus = 'global'      # Select: 'SARS2', 'SARS', 'MERS', 'global'
     target = 'glide'   # Select: '7rnwA1', '2gx4A1', '7eneC1', 'glide'
     glide_csvs = ['/home/cactus/julia/gensim/selective/glide0/docking/%s_%s_best.csv'%(virus,target),\
-                    '/home/cactus/julia/gensim/selective/glide1/docking/%s_%s_best.csv'%(virus,target),\
-                    '/home/cactus/julia/gensim/selective/glide2/docking/%s_%s_best.csv'%(virus,target),\
-                    '/home/cactus/julia/gensim/selective/glide3/docking/%s_%s_best.csv'%(virus,target),\
-                    '/home/cactus/julia/gensim/selective/glide4/docking/%s_%s_best.csv'%(virus,target),\
-                    '/home/cactus/julia/gensim/selective/glide5/docking/%s_%s_best.csv'%(virus,target),\
-                    '/home/cactus/julia/gensim/selective/glide6/docking/%s_%s_best.csv'%(virus,target),\
-                    '/home/cactus/julia/gensim/selective/glide7/docking/%s_%s_best.csv'%(virus,target),\
-                    '/home/cactus/julia/gensim/selective/glide8/docking/%s_%s_best.csv'%(virus,target),\
-                    '/home/cactus/julia/gensim/selective/glide9/docking/%s_%s_best.csv'%(virus,target),\
-                    '/home/cactus/julia/gensim/selective/glide10/docking/%s_%s_best.csv'%(virus,target)]
+                    '%s/glide_1/docking/%s_%s_best.csv'%(resdir,virus,target),\
+                    '%s/glide_2/docking/%s_%s_best.csv'%(resdir,virus,target),\
+                    '%s/glide_3/docking/%s_%s_best.csv'%(resdir,virus,target),\
+                    '%s/glide_4/docking/%s_%s_best.csv'%(resdir,virus,target),\
+                    '%s/glide_5/docking/%s_%s_best.csv'%(resdir,virus,target),\
+                    '%s/glide_6/docking/%s_%s_best.csv'%(resdir,virus,target),\
+                    '%s/glide_7/docking/%s_%s_best.csv'%(resdir,virus,target),\
+                    '%s/glide_8/docking/%s_%s_best.csv'%(resdir,virus,target),\
+                    '%s/glide_9/docking/%s_%s_best.csv'%(resdir,virus,target),\
+                    '%s/glide_10/docking/%s_%s_best.csv'%(resdir,virus,target)]
     labels = ['initial specific', 'outer1', 'outer2', 'outer3', 'outer4', 'outer5', 'outer6', 'outer7', 'outer8', 'outer9', 'outer10']
-    superimpose_histograms(list_of_csvs=glide_csvs, list_of_labels=labels, insert_title='Glide docking score', out='/home/cactus/julia/gensim/selective/plots/%s_hist_gscores.png'%virus, savefig=True, legend_loc='upper right')
-    superimpose_histograms(list_of_csvs=glide_csvs, list_of_labels=labels, insert_title='Glide docking score', out='/home/cactus/julia/gensim/selective/plots/%s_hist_gscores_zoom.png'%virus, savefig=True, legend_loc='upper left', xlim=[-10.5,-7.5], ylim=[0, 500])
-    superimpose_histograms(list_of_csvs=glide_csvs, list_of_labels=labels, insert_title='', out='/home/cactus/julia/gensim/selective/plots/%s_hist_gscores_zoom_poster.png'%virus, savefig=True, legend_loc='upper left', xlim=[-10.5,-7.5], ylim=[0, 320])
+    superimpose_histograms(list_of_csvs=glide_csvs, list_of_labels=labels, insert_title='Glide docking score', out='%s/plots/%s_hist_gscores.png'%(resdir,virus), savefig=True, legend_loc='upper right')
+    superimpose_histograms(list_of_csvs=glide_csvs, list_of_labels=labels, insert_title='Glide docking score', out='%s/plots/%s_hist_gscores_zoom.png'%(resdir,virus), savefig=True, legend_loc='upper left', xlim=[-10.5,-7.5], ylim=[0, 500])
     """
     
     # TABLE OF GSCORES vs. TANIMOTO + THRESHOLD COUNTS
     """
-    virus = 'global'      # Select: 'SARS2', 'SARS', 'MERS', 'global'
-    target = 'glide'   # Select: '7rnwA1', '2gx4A1', '7eneC1', 'glide'
-    create_df_gscore_vs_tanimoto(files_dir='/home/cactus/julia/gensim/selective/', specific_set='/home/cactus/julia/gensim/selective/sel_init_spec_set.smi', virus=virus, target=target)
+    virus = 'MERS'      # Select: 'SARS2', 'SARS', 'MERS', 'global'
+    target = '7eneC1'   # Select: '7rnwA1', '2gx4A1', '7eneC1', 'glide'
+    create_df_gscore_vs_tanimoto(files_dir=resdir, specific_set='%s/sel_init_spec_set.smi'%resdir, virus=virus, target=target)
     """
     
     """
-    tables = ['/home/cactus/julia/gensim/selective/SARS2_df_gscore_tanimoto.csv',\
-                '/home/cactus/julia/gensim/selective/SARS_df_gscore_tanimoto.csv',\
-                '/home/cactus/julia/gensim/selective/MERS_df_gscore_tanimoto.csv']
+    tables = ['%s/SARS2_df_gscore_tanimoto.csv'%resdir,\
+                '%s/SARS_df_gscore_tanimoto.csv'%resdir,\
+                '%s/MERS_df_gscore_tanimoto.csv'%resdir]
     glob_gscores = [-7, -7.5, -8, -8.5, -9, -9.5, -10]
     ind_gscores = [-6.5, -7, -7.5, -8, -8.5, -9, -9.5]
     for i in range(7):
-        apply_thresholds(global_csv='/home/cactus/julia/gensim/selective/global_df_gscore_tanimoto.csv', individual_csvs=tables, 
-                         gscore_ind=ind_gscores[i], gscore_glob=glob_gscores[i], tan_ind=1, tan_glob=1)
+        apply_thresholds(global_csv='%s/global_df_gscore_tanimoto.csv'%resdir, individual_csvs=tables, 
+                         gscore_ind=ind_gscores[i], gscore_glob=glob_gscores[i], tan_ind=0.3, tan_glob=0.3)
     """
     
     # PLOT SPECIFIC SET EVOLUTION
     """
-    plot_specific_set_evolution(results_dir='/home/cactus/julia/gensim/selective',\
-                                outdir='/home/cactus/julia/gensim/selective/plots', outname='specific_set_evolution')
+    plot_specific_set_evolution(results_dir=resdir,\
+                                outdir='%s/plots'%resdir, outname='specific_set_evolution')
     """
     
     # PLOT TSNEs
-    # by inner loop
-    """
-    _simplify_specific_sets(results_dir=resdir, outname=n)
-    spec_simples = glob.glob('%s/%s_*/%s_specific_smiles_simple.csv'%(resdir, n, n))
-    spec_inner = [x.split('/')[-2].split('_')[-1] for x in spec_simples]
-    for i, spec_simple in enumerate(spec_simples):
-        convert_csv_to_sdf_file(csv_to_convert=spec_simple, outdir='%s/%s_%s'%(resdir, n, spec_inner[i]), inner=spec_inner[i])
-
-    spec_simples = glob.glob('%s/%s_*/%s_specific_smiles_simple.sdf'%(resdir, n, n))
-    sdf_list = []
-    rev_inners = list(range(1, len(spec_simples)+1))
-    rev_inners.sort(reverse=True)
-    for i in rev_inners:
-        sdf_list.append('/home/cactus/julia/gensim/full/outer1/gensim_mt_%s/gensim_mt_specific_smiles_simple.sdf'%i)
-    names = ['specific_19', 'specific_18', 'specific_17', 'specific_16', 'specific_15',\
-            'specific_14', 'specific_13', 'specific_12', 'specific_11', 'specific_10',\
-            'specific_9', 'specific_8', 'specific_7', 'specific_6', 'specific_5',\
-            'specific_4', 'specific_3', 'specific_2', 'specific_1', 'specific_0']
-    sizes = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.6]
-    alphas = [0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9]
-    markers = ["o", "o", "o", "o", "o", "o", "o", "o", "o", "o", "o", "o", "o", "o", "o", "o", "o", "o", "o", "*"]
-    plot_modbs_tSNE_or_UMAP(list_of_sdfs=sdf_list, list_of_names=names, outdir='/home/cactus/julia/gensim/selective/outer10', outname='UMAP_outer10',\
-                            sizes=sizes, alphas=alphas, markers=markers, ptype='UMAP')
-    """
     # by outer loop
     """
-    sdf_list = glob.glob('/home/cactus/julia/gensim/selective/outer?/sel_spec_set_outer?.smi')
+    sdf_list = glob.glob('%s/outer_?/specific_outer_?.smi'%resdir)
     sdf_list.sort()
-    sdf_list.append('/home/cactus/julia/gensim/selective/outer10/sel_spec_set_outer10.smi')
-    sdf_list.insert(0, '/home/cactus/julia/gensim/selective/sel_init_spec_set.smi')   
+    sdf_list.append('%s/outer_10/specific_outer_10.smi'%resdir)
+    sdf_list.insert(0, '%s/sel_init_spec_set.smi'%resdir)   
     simplify_specific_sets_smi(list_spec_set=sdf_list)
     """
     """
-    sdf_list = glob.glob('/home/cactus/julia/gensim/selective/outer?/sel_spec_set_outer?_simple.smi')
+    sdf_list = glob.glob('%s/outer_?/specific_outer_?_simple.smi'%resdir)
     sdf_list.sort(reverse=True)
-    sdf_list.insert(0, '/home/cactus/julia/gensim/selective/outer10/sel_spec_set_outer10_simple.smi')
-    sdf_list.insert(0, '/home/cactus/julia/gensim/selective/outer11/specific_set.smi')
-    sdf_list.append('/home/cactus/julia/gensim/selective/sel_init_spec_set.smi')
+    sdf_list.insert(0, '%s/outer_10/specific_outer_10_simple.smi'%resdir)
+    sdf_list.insert(0, '%s/outer_11/specific_set.smi'%resdir)
+    sdf_list.append('%s/sel_init_spec_set.smi'%resdir)
 
     names = ['outer10', 'outer9', 'outer8', 'outer7', 'outer6', 'outer5', 'outer4', 'outer3', 'outer2', 'outer1', 'initial specific']
     sizes = [0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4]
     alphas = [0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9]
     markers = ["o", "o", "o", "o", "o", "o", "o", "o", "o", "o", "*"]
     
-    plot_UMAP(list_smis=sdf_list, list_names=names, outdir='/home/cactus/julia/gensim/selective/plots', outname='UMAP_spec_sets',\
+    plot_UMAP(list_smis=sdf_list, list_names=names, outdir='%s/plots'%resdir, outname='UMAP_spec_sets',\
               sizes=sizes, alphas=alphas, markers=markers)
     """
     
@@ -205,14 +187,14 @@ if __name__ == "__main__":
     def superpose_specific_set_evolution(results_dir, gscore_values, outdir, outname):        
         plt.figure()
         fig, ax = plt.subplots(figsize=(10,6), dpi=300)
-        outers = glob.glob('%s/outer?'%results_dir)
+        outers = glob.glob('%s/outer_?'%results_dir)
         outers.sort()
-        outers = outers + ['%s/outer10'%results_dir]
+        outers = outers + ['%s/outer_10'%results_dir]
 
         sizes_specific = []
         inner_sizes = []
         for i, outer in enumerate(outers):
-            table = pd.read_csv('%s/outer%s/table_of_counts_trans.csv'%(results_dir, i+1))
+            table = pd.read_csv('%s/outer_%s/table_of_counts_trans.csv'%(results_dir, i+1))
             size_specific = table['specific'].tolist()
             sizes_specific.extend(size_specific)
             inner_size = len(table)
@@ -238,9 +220,9 @@ if __name__ == "__main__":
         plt.legend(loc='lower right')
         plt.savefig('%s/%s.png'%(outdir, outname))
     
-    superpose_specific_set_evolution(results_dir='/home/cactus/julia/gensim/selective',\
-                                     gscore_values=[-7.5, -7.6, -7.7, -7.8, -7.9, -7.9, -8.0, -8.1, -8.2, -8.2],\
-                                     outdir='/home/cactus/julia/gensim/selective/plots', outname='specific_set_evolution_sel')
+    superpose_specific_set_evolution(results_dir=resdir,\
+                                     gscore_values=[-7.5, -7.6, -7.7, -7.8, -7.9, -8.0, -8.1, -8.2, -8.3, -8.3],\
+                                     outdir='%s/plots'%resdir, outname='specific_set_evolution_dscores')
     """
     
     # Count compounds under glide threshold INITIAL specific set
@@ -249,7 +231,7 @@ if __name__ == "__main__":
         
         # First, get the global compounds
         glob_df = pd.read_csv(global_csv)
-        glob_filt = glob_df[(glob_df['r_i_glide_gscore'] <= gscore_glob)]
+        glob_filt = glob_df[(glob_df['r_i_docking_score'] <= gscore_glob)]
         glob_ids = glob_filt['title'].tolist()
         glob_compounds = set(glob_ids)
         
@@ -259,7 +241,7 @@ if __name__ == "__main__":
             ind_df = pd.read_csv(csv)
 
             # Filter the individual compounds based on the thresholds
-            ind_filt = ind_df[(ind_df['r_i_glide_gscore'] <= gscore_ind)]
+            ind_filt = ind_df[(ind_df['r_i_docking_score'] <= gscore_ind)]
             ind_ids = ind_filt['title'].tolist()
             ind_compounds = set(ind_ids)
             all_ind_comp.append(ind_compounds)
@@ -280,46 +262,34 @@ if __name__ == "__main__":
                                 gscore_ind=ind_gscores[i], gscore_glob=glob_gscores[i])
     """
     
-    # FINAL SELECTION FOR PELE
-    """
-    tables = ['/home/cactus/julia/gensim/selective/SARS2_df_gscore_tanimoto.csv',\
-                '/home/cactus/julia/gensim/selective/SARS_df_gscore_tanimoto.csv',\
-                '/home/cactus/julia/gensim/selective/MERS_df_gscore_tanimoto.csv']
-    glob_gscores = [-7, -7.5, -8, -8.5, -9, -9.5, -10]
-    ind_gscores = [-6.5, -7, -7.5, -8, -8.5, -9, -9.5]
-    for i in range(7):
-        apply_thresholds(global_csv='/home/cactus/julia/gensim/selective/global_df_gscore_tanimoto.csv', individual_csvs=tables, 
-                         gscore_ind=ind_gscores[i], gscore_glob=glob_gscores[i], tan_ind=0.3, tan_glob=0.3)
-    """
-
     # GET TABLE OF RESULTS
     """
-    map_gscores_generated(csv_global='/home/cactus/julia/gensim/selective/global_df_gscore_tanimoto.csv',\
-                            csv_virus=['/home/cactus/julia/gensim/selective/SARS2_df_gscore_tanimoto.csv',\
-                            '/home/cactus/julia/gensim/selective/SARS_df_gscore_tanimoto.csv',\
-                            '/home/cactus/julia/gensim/selective/MERS_df_gscore_tanimoto.csv'],\
-                            outdir='/home/cactus/julia/gensim/selective', outname='results')
+    map_gscores_generated(csv_global='%s/global_df_gscore_tanimoto.csv'%resdir,\
+                            csv_virus=['%s/SARS2_df_gscore_tanimoto.csv'%resdir,\
+                            '%s/SARS_df_gscore_tanimoto.csv'%resdir,\
+                            '%s/MERS_df_gscore_tanimoto.csv'%resdir],\
+                            outdir=resdir, outname='results')
     
     """
     
     # CLUSTER DBSCANS
     """
-    plot_cluster_DBSCAN(csv_results='/home/cactus/julia/gensim/selective/results.csv',
-                        smi_specific='/home/cactus/julia/gensim/selective/sel_init_spec_set.smi',
+    plot_cluster_DBSCAN(csv_results='%s/results.csv'%resdir,
+                        smi_specific='%s/sel_init_spec_set.smi'%resdir,
                         gscore_glob_thr=-8,
                         gscore_ind_thr=-7.5,
                         tanimoto_thr=0.3,
                         similarity_thrs=[0.7, 0.6, 0.5, 0.4, 0.3],
-                        outname='plots/cluster_dbscans_selective')
-    
-    plot_new_scaffolds(csv_results='/home/cactus/julia/gensim/selective/results.csv',
-                       smi_specific='/home/cactus/julia/gensim/selective/sel_init_spec_set.smi',
+                        outname='%s/plots/cluster_dbscans_selective'%resdir)
+
+    plot_new_scaffolds(csv_results='%s/results.csv'%resdir,
+                       smi_specific='%s/sel_init_spec_set.smi'%resdir,
                        gscore_glob_thr=-8,
                        gscore_ind_thr=-7.5,
                        tanimoto_thr=0.3,
                        similarity_thrs=[0.7, 0.6, 0.5, 0.4, 0.3],
-                       outname='plots/perc_newscaffolds_selective')
-    #"""
+                       outname='%s/plots/perc_newscaffolds_selective'%resdir)
+    """
     
     # APPLY THRESHOLDS
     """
@@ -333,13 +303,13 @@ if __name__ == "__main__":
   
     # FILTER CSV RESULTS FOR ALEXIS
     """
-    indv = -7
-    glo = -7.5
-    csv_results = '/home/cactus/julia/gensim/selective/results.csv'
+    indv = -7.5
+    glo = -8
+    csv_results = '%s/results.csv'%resdir
     df = pd.read_csv(csv_results)
     df_filt = df[(df['global_gscore'] <= glo) & (df['gscore_SARS2'] <= indv) & (df['gscore_SARS'] <= indv) & (df['gscore_MERS'] <= indv)  & (df['max_tan'] <= 0.3)]
     print(df_filt)
-    df_filt.to_csv('/home/cactus/julia/gensim/selective/results_filt_selective.csv', index=False)
+    df_filt.to_csv('%s/results_filt.csv'%resdir, index=False)
     """
     
     # GET SMILES FOR FILTERED PAINS ADMET MOLECULES
@@ -378,3 +348,55 @@ if __name__ == "__main__":
                                       '/home/cactus/julia/gensim/selective/final_output_selective_highPAINS_ADMET.csv',
                                       '/home/cactus/julia/gensim/selective/final_output_selective_highPAINS_ADMET_mapped.csv')
     """
+    
+    # PLOT SUMMARY OF GENERATION
+    
+    df = pd.read_csv('%s/summary_selective_nocatalog.csv'%resdir)
+    # Transpose the dataframe
+    df = df.T
+    # add index as a column
+    df.reset_index(inplace=True)
+    # add the first row as the header and remove it
+    df.columns = df.iloc[0]
+    df = df.drop(0)
+    df = df.rename(columns={"Unnamed: 0": "outer_round"})
+    print(df)
+
+    # Create figure and primary axis
+    fig, ax1 = plt.subplots(figsize=(8, 10), dpi=200)
+
+    # Stacked bar plot
+    bars1 = ax1.bar(df["outer_round"], df["generated"], label="Generated", color="#A3BBAD")
+    bars2 = ax1.bar(df["outer_round"], df["inner_al"], label="Inner Active Learning", color="#357266")
+    bars3 = ax1.bar(df["outer_round"], df["outer_al"], label="Outer Active Learning", color="#0E3B43")
+
+    # Annotate bars with percentages
+    for i in range(1, len(df)+1):
+        # Inner Active Learning percentage annotation
+        ax1.text(df["outer_round"][i], df["outer_al"][i] + (df["inner_al"][i]), 
+                f"{df['perc_inner_al'][i]:.1f}%", ha='center', va='baseline', color="white", fontsize=8)
+
+        # Outer Active Learning percentage annotation
+        ax1.text(df["outer_round"][i], df["outer_al"][i] / 2, 
+                f"{df['perc_outer_al'][i]:.1f}%", ha='center', va='baseline', color="white", fontsize=8)
+
+    # Labels for left y-axis
+    ax1.set_xlabel("Outer Round")
+    ax1.set_ylabel("Number of Molecules")
+    ax1.set_title("Summary of Generation")
+
+    # Second y-axis for gscore thresholds
+    ax2 = ax1.twinx()
+    ax2.plot(df["outer_round"], df["glob_gsscore_thr"], label="Global gscore thr.", color="darkred", marker="s", linestyle="dotted")
+    ax2.plot(df["outer_round"], df["ind_gscore_thr"], label="Indiv. gscore thr.", color="red", marker="s", linestyle="dotted")
+    ax2.set_ylim(-10, -6)
+    
+    # Labels for right y-axis
+    ax2.set_ylabel("Docking Score Threshold")
+
+    # Legends
+    ax1.legend(loc="upper center")
+    ax2.legend(loc="upper right")
+
+    # Show plot
+    plt.savefig('%s/plots/summary_generation.png'%resdir)
