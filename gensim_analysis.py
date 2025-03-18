@@ -351,14 +351,14 @@ def plot_specific_set_evolution(results_dir, outdir, outname):
     """It plots the evolution of the specific set."""
     plt.figure()
     fig, ax = plt.subplots(figsize=(8,6))
-    outers = glob.glob('%s/outer?'%results_dir)
+    outers = glob.glob('%s/outer_?'%results_dir)
     outers.sort()
-    outers = outers + ['%s/outer10'%results_dir]
+    outers = outers + ['%s/outer_10'%results_dir]
 
     sizes_specific = []
     inner_sizes = []
     for i, outer in enumerate(outers):
-        table = pd.read_csv('%s/outer%s/table_of_counts_trans.csv'%(results_dir, i+1))
+        table = pd.read_csv('%s/outer_%s/table_of_counts_trans.csv'%(results_dir, i+1))
         size_specific = table['specific'].tolist()
         sizes_specific.extend(size_specific)
         inner_size = len(table)
@@ -374,35 +374,35 @@ def superpose_specific_set_evolution(results_dir_1, results_dir_2, gscore_values
     """It superposes the evolution of the specific set."""
     plt.figure()
     fig, ax = plt.subplots(figsize=(8,6))
-    outers = glob.glob('%s/outer?'%results_dir_1)
+    outers = glob.glob('%s/outer_?'%results_dir_1)
     outers.sort()
-    outers = outers + ['%s/outer10'%results_dir_1]
+    outers = outers + ['%s/outer_10'%results_dir_1]
 
     sizes_specific = []
     inner_sizes = []
     for i, outer in enumerate(outers):
-        table = pd.read_csv('%s/outer%s/table_of_counts_trans.csv'%(results_dir_1, i+1))
+        table = pd.read_csv('%s/outer_%s/table_of_counts_trans.csv'%(results_dir_1, i+1))
         size_specific = table['specific'].tolist()
         sizes_specific.extend(size_specific)
         inner_size = len(table)
         inner_sizes.append(inner_size)
     x = list(range(1, len(sizes_specific)+1))
-    plt.plot(x, sizes_specific, marker='.', color='seagreen', label='specific set FULL')
+    plt.plot(x, sizes_specific, marker='.', color='seagreen', label='specific set ALLFILTERS')
     
-    outers2 = glob.glob('%s/outer?'%results_dir_2)
+    outers2 = glob.glob('%s/outer_?'%results_dir_2)
     outers2.sort()
-    outers2 = outers2 + ['%s/outer10'%results_dir_2]
+    outers2 = outers2 + ['%s/outer_10'%results_dir_2]
     
     sizes_specific2 = []
     inner_sizes2 = []
     for i, outer in enumerate(outers2):
-        table = pd.read_csv('%s/outer%s/table_of_counts_trans.csv'%(results_dir_2, i+1))
+        table = pd.read_csv('%s/outer_%s/table_of_counts_trans.csv'%(results_dir_2, i+1))
         size_specific = table['specific'].tolist()
         sizes_specific2.extend(size_specific)
         inner_size = len(table)
         inner_sizes2.append(inner_size)
     x2 = list(range(1, len(sizes_specific2)+1))
-    plt.plot(x2, sizes_specific2, marker='.', color='royalblue', label='specific set SELECTIVE')
+    plt.plot(x2, sizes_specific2, marker='.', color='royalblue', label='specific set NOCATALOG')
     plt.legend(loc='upper right')
     
     lines = list(itertools.accumulate(inner_sizes))
@@ -417,8 +417,8 @@ def superpose_specific_set_evolution(results_dir_1, results_dir_2, gscore_values
     # Create a secondary y-axis with the gscore values
     ax2 = ax.twinx()
     ax2.set_ylabel('Global Gscores')
-    ax2.plot(lines, gscore_values_1, marker='.', color='lightgreen', label='Gscore FULL', linewidth=5, alpha=0.5)
-    ax2.plot(lines, gscore_values_2, marker='.', color='cornflowerblue', label='Gscore SELECTIVE', linewidth=5, alpha=0.5)
+    ax2.plot(lines, gscore_values_1, marker='.', color='lightgreen', label='Gscore ALLFILTERS', linewidth=5, alpha=0.5)
+    ax2.plot(lines, gscore_values_2, marker='.', color='cornflowerblue', label='Gscore NOCATALOG', linewidth=5, alpha=0.5)
     ax2.set_ylim(-9, -6)
     
     plt.legend(loc='lower right')

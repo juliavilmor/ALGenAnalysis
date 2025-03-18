@@ -136,7 +136,8 @@ def plot_glide_scores(path_to_best_csv, insert_title, outdir, savefig=True):
 def superimpose_histograms(list_of_csvs, list_of_labels, insert_title, out, savefig=True, legend_loc='upper right', xlim=None, ylim=None):
     """Superimpose histograms to compare."""
 
-    plt.figure(figsize=(8, 6), dpi=200)
+    #plt.figure(figsize=(8, 6), dpi=200)
+    plt.figure(figsize=(6, 6), dpi=200)
     total = len(list_of_csvs)
     colors = mcp.gen_color(cmap="YlGnBu", n=total+1)
     colors = colors[2:total+1]
@@ -240,8 +241,7 @@ def filter_by_glide_gscore_paninhibitors(list_of_csvs, outdir, gscore_global=-6.
 
 def cumulative_histograms(final_csvs, initial_csvs, list_of_labels, list_of_colors, insert_title, out, savefig=True, legend_loc='upper right', xlim=None, ylim=None):
     
-    plt.figure(figsize=(6,6))
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(6,6))
     list_of_csvs = final_csvs + initial_csvs
     total = len(list_of_csvs)
     colors = list_of_colors

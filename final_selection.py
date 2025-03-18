@@ -26,10 +26,10 @@ def create_df_gscore_vs_tanimoto(files_dir, specific_set, virus='global', target
     out = open('%s/%s_df_gscore_tanimoto.csv'%(files_dir,virus), 'w')
     out.write('id,SMILES,gscore,max_tan,outer\n')
 
-    files = glob.glob('%s/glide?/docking/%s_%s_best.csv'%(files_dir,virus,target))
+    files = glob.glob('%s/glide_?/docking/%s_%s_best.csv'%(files_dir,virus,target))
     files.sort()
-    files.append('%s/glide10/docking/%s_%s_best.csv'%(files_dir,virus,target))
-    files = files[1:] # not glide0
+    files.append('%s/glide_10/docking/%s_%s_best.csv'%(files_dir,virus,target))
+    #files = files[1:] # not glide0
 
     for i, csv_file in enumerate(files):
         outer_round = i+1
@@ -38,7 +38,7 @@ def create_df_gscore_vs_tanimoto(files_dir, specific_set, virus='global', target
             ids = row['title']
             ids = ids.replace(',', '-')
             smiles = row['SMILES']
-            gscores = row['r_i_glide_gscore']
+            gscores = row['r_i_docking_score']
             mol1 = moldb.Mol(smile=smiles)
             maxtanimoto=0
             for mol2 in specific_mols:
