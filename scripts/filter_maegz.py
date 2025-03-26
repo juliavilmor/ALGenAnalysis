@@ -20,7 +20,8 @@ def extract_ligand_best_poses(csv_file, maegz_files, output_dir, outname, virus)
 
         m = struct.StructureReader(maegz_file)
 
-        for s in m:
+        for i, s in enumerate(m):
+            if i == 0: continue # because the first structure is the receptor
             props = s.property.keys()
             title = s.title
             title = title.split('.')[-1]    # Title in maegz file
@@ -31,19 +32,19 @@ def extract_ligand_best_poses(csv_file, maegz_files, output_dir, outname, virus)
 
             if title != ids: continue
             print(title, ids)
-            for prop in props:
+            
+            st_gscore = s.property['r_i_docking_score']
+            if round(st_gscore, 3) != round(gscores, 3): continue
+            print(round(gscores, 3), round(st_gscore, 3))
 
-                if prop != 'r_i_docking_gscore': continue
-                st_gscore = s.property[prop]
-                if round(st_gscore, 3) != round(gscores, 3): continue
-                print(round(gscores, 3), round(st_gscore, 3))
+            # change maegz title
+            s.title = row['id']
 
-                # change maegz title
-                s.title = row['id']
-                
-                writer.append(s)
+            writer.append(s)
+            
         m.close()
     writer.close()
+    print('Structures saved to: %s/%s'%(output_dir,outname))
 
 
 if __name__ == '__main__':
@@ -51,7 +52,7 @@ if __name__ == '__main__':
     """ Example usage:
         $SCHRODINGER/run python3 filter_maegz.py
     """
-    
+
     resdir = '/home/cactus/julia/gensim/selective_nocatalog_pretrained'
     virus = 'MERS' # Choose from: 'SARS2', 'SARS', 'MERS'
     target = '7eneC1' # Choose from: '7rnwA1', '2gx4A1', '7eneC1'
@@ -63,5 +64,6 @@ if __name__ == '__main__':
     outname = '%s_ligands_filtered.maegz'%virus
 
     extract_ligand_best_poses(csv_file, maegz_files, outdir, outname, virus)
+    print('Done!')
 
 
