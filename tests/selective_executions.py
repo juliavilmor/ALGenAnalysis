@@ -1,3 +1,6 @@
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from gensim_analysis import *
 from glide_analysis import *
 from final_selection import *
@@ -288,14 +291,14 @@ if __name__ == "__main__":
     
     # APPLY THRESHOLDS
     """
-    glob_gscores = [-7, -7.5, -8, -8.5, -9, -9.5, -10]
-    ind_gscores = [-6.5, -7, -7.5, -8, -8.5, -9, -9.5]
+    glob_gscores = [-7, -7.5, -8, -8, -8.5, -9, -9.5, -10]
+    ind_gscores = [-6.5, -7, -7.5, -8, -8, -8, -8, -8]
     df = pd.read_csv('/home/cactus/julia/gensim/selective/results.csv')
-    for i in range(7):
-        df_filt = df[(df['global_gscore'] <= glob_gscores[i]) & (df['gscore_SARS2'] <= ind_gscores[i]) & (df['gscore_SARS'] <= ind_gscores[i]) & (df['gscore_MERS'] <= ind_gscores[i])  & (df['max_tan'] <= 0.3)]
+    for i in range(8):
+        df_filt = df[(df['global_gscore'] <= glob_gscores[i]) & (df['gscore_SARS2'] <= ind_gscores[i]) & (df['gscore_SARS'] <= ind_gscores[i]) & (df['gscore_MERS'] <= ind_gscores[i])]
         print(len(df_filt))
     """       
-  
+    
     # FILTER CSV RESULTS FOR ALEXIS
     """
     indv = -7
