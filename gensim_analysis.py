@@ -282,6 +282,7 @@ def remove_duplicates_from_sdf(sdf_file):
     """It removes duplicates from an sdf file."""
     
     mols = moldb.MolDB(sdfDB=sdf_file, verbose=False)
+    mols.filterSimilarity(simt=1, alg='Morgan4',verbose=False)
     mols.saveToSdf(sdf_file.replace('.sdf', '_unique'))
     print('Duplicates removed successfully')
     print('The new sdf file contains %s molecules'%len(mols.mols))
@@ -376,7 +377,10 @@ def superpose_specific_set_evolution(results_dir_1, results_dir_2, gscore_values
     fig, ax = plt.subplots(figsize=(8,6))
     outers = glob.glob('%s/outer_?'%results_dir_1)
     outers.sort()
-    outers = outers + ['%s/outer_10'%results_dir_1]
+    outers_ = glob.glob('%s/outer_??'%results_dir_1)
+    outers_.sort()
+    outers = outers + outers_
+    outers = outers[:-1]
 
     sizes_specific = []
     inner_sizes = []
@@ -387,11 +391,14 @@ def superpose_specific_set_evolution(results_dir_1, results_dir_2, gscore_values
         inner_size = len(table)
         inner_sizes.append(inner_size)
     x = list(range(1, len(sizes_specific)+1))
-    plt.plot(x, sizes_specific, marker='.', color='seagreen', label='specific set ALLFILTERS')
+    plt.plot(x, sizes_specific, marker='.', color='seagreen', label='Regular Configuration')
     
     outers2 = glob.glob('%s/outer_?'%results_dir_2)
     outers2.sort()
-    outers2 = outers2 + ['%s/outer_10'%results_dir_2]
+    outers_ = glob.glob('%s/outer_??'%results_dir_2)
+    outers_.sort()
+    outers2 = outers2 + outers_
+    outers2 = outers2[:-1]
     
     sizes_specific2 = []
     inner_sizes2 = []
@@ -402,23 +409,24 @@ def superpose_specific_set_evolution(results_dir_1, results_dir_2, gscore_values
         inner_size = len(table)
         inner_sizes2.append(inner_size)
     x2 = list(range(1, len(sizes_specific2)+1))
-    plt.plot(x2, sizes_specific2, marker='.', color='royalblue', label='specific set NOCATALOG')
+    plt.plot(x2, sizes_specific2, marker='.', color='royalblue', label='Ablated Configuration')
     plt.legend(loc='upper right')
     
-    lines = list(itertools.accumulate(inner_sizes))
+    lines1 = list(itertools.accumulate(inner_sizes))
+    lines2 = list(itertools.accumulate(inner_sizes2))
     
-    for line in lines:
+    for line in lines2:
         plt.axvline(line, color='black', linestyle=':', alpha=0.5)
 
     ax.set_yscale('log', base=10)
     ax.set_ylabel('Specific set size (log scale)')
-    ax.set_xlabel('Inner round')
-    
+    ax.set_xlabel('Chemical AL cycle')
+
     # Create a secondary y-axis with the gscore values
     ax2 = ax.twinx()
-    ax2.set_ylabel('Global Gscores')
-    ax2.plot(lines, gscore_values_1, marker='.', color='lightgreen', label='Gscore ALLFILTERS', linewidth=5, alpha=0.5)
-    ax2.plot(lines, gscore_values_2, marker='.', color='cornflowerblue', label='Gscore NOCATALOG', linewidth=5, alpha=0.5)
+    ax2.set_ylabel('Global Docking Score Threshold')
+    ax2.plot(lines1, gscore_values_1, marker='.', color='lightgreen', label='Regular Configuration', linewidth=5, alpha=0.5)
+    ax2.plot(lines2, gscore_values_2, marker='.', color='cornflowerblue', label='Ablated Configuration', linewidth=5, alpha=0.5)
     ax2.set_ylim(-9, -6)
     
     plt.legend(loc='lower right')

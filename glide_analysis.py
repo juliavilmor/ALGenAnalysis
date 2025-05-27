@@ -137,7 +137,7 @@ def superimpose_histograms(list_of_csvs, list_of_labels, insert_title, out, save
     """Superimpose histograms to compare."""
 
     #plt.figure(figsize=(8, 6), dpi=200)
-    plt.figure(figsize=(6, 6), dpi=200)
+    plt.figure(figsize=(6, 6), dpi=500)
     total = len(list_of_csvs)
     colors = mcp.gen_color(cmap="YlGnBu", n=total+1)
     colors = colors[2:total+1]
@@ -241,7 +241,7 @@ def filter_by_glide_gscore_paninhibitors(list_of_csvs, outdir, gscore_global=-6.
 
 def cumulative_histograms(final_csvs, initial_csvs, list_of_labels, list_of_colors, insert_title, out, savefig=True, legend_loc='upper right', xlim=None, ylim=None):
     
-    fig, ax = plt.subplots(figsize=(6,6))
+    fig, ax = plt.subplots(figsize=(6,6), dpi=500)
     list_of_csvs = final_csvs + initial_csvs
     total = len(list_of_csvs)
     colors = list_of_colors
@@ -250,7 +250,9 @@ def cumulative_histograms(final_csvs, initial_csvs, list_of_labels, list_of_colo
         df = df.rename(columns={'r_i_docking_score': 'gscore'})
         df = df[df['gscore'] != 10000]
         average = mean(df['gscore'].tolist())
-        sns.histplot(data=df, x=df['gscore'].astype(float), color=colors[i], label=list_of_labels[i], element='step', fill=False, bins=70)
+        sns.histplot(data=df, x=df['gscore'].astype(float), color=colors[i], label=list_of_labels[i], element='step', fill=False, bins=100)
+        #sns.histplot(data=df, x=df['gscore'].astype(float), color=colors[i], label=list_of_labels[i], element='step', fill=False, bins=100, stat='probability')
+        #sns.histplot(data=df, x=df['gscore'].astype(float), color=colors[i], label=list_of_labels[i], element='step', fill=False, bins=80, log_scale=(False,True))
         plt.axvline(average, color=colors[i], linestyle=":")
     plt.legend(loc=legend_loc, frameon=False)
     plt.title(insert_title)
