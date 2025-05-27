@@ -13,6 +13,7 @@ from rdkit.Chem import rdFingerprintGenerator
 from rdkit import DataStructs
 from collections import Counter
 from statistics import mean
+import itertools
 
 
 def create_df_gscore_vs_tanimoto(files_dir, specific_set, virus='global', target='glide'):
@@ -21,14 +22,15 @@ def create_df_gscore_vs_tanimoto(files_dir, specific_set, virus='global', target
     specific = open(specific_set, 'r')
     specific_smiles = [line for line in specific]
     specific_mols = [moldb.Mol(smile=smile) for smile in specific_smiles]
-
-    #out = open('%s/%s_df_gscore_tanimoto.csv'%(files_dir,virus), 'w')
+    
     out = open('%s/%s_df_gscore_tanimoto.csv'%(files_dir,virus), 'w')
     out.write('id,SMILES,gscore,max_tan,outer\n')
 
     files = glob.glob('%s/glide_?/docking/%s_%s_best.csv'%(files_dir,virus,target))
     files.sort()
-    files.append('%s/glide_10/docking/%s_%s_best.csv'%(files_dir,virus,target))
+    files2 = glob.glob('%s/glide_??/docking/%s_%s_best.csv'%(files_dir,virus,target))
+    files2.sort()
+    files = files + files2
     #files = files[1:] # not glide0
 
     for i, csv_file in enumerate(files):
@@ -47,7 +49,7 @@ def create_df_gscore_vs_tanimoto(files_dir, specific_set, virus='global', target
                     if similarity > maxtanimoto: maxtanimoto=similarity
                 except:
                     print('similarity computation failed')
-            #print(ids, smiles, gscores, maxtanimoto, outer_round)
+            print(ids, smiles, gscores, maxtanimoto, outer_round)
             out.write('%s,%s,%s,%.4f,outer_%s\n'%(ids,smiles,gscores,maxtanimoto,outer_round))
     out.close()
 
@@ -152,7 +154,13 @@ def map_gscores_generated(csv_global, csv_virus, outdir, outname):
         global_df = pd.merge(global_df, virus_df, on=['id'])
 
     global_df.to_csv('%s/%s.csv'%(outdir, outname), index=False)
-
+    
+def create_table_results(csv_file, outdir, outname):
+    df = pd.read_csv(csv_file)
+    df['id'] = df['outer'] + '_' + df['id']
+    df['id'] = df['id'].str.replace('outer_', '')
+    df = df[['id', 'SMILES', 'max_tan', 'gscore']]
+    df.to_csv('%s/%s.csv'%(outdir, outname), index=False)
 
 def get_scaffolds_db(molecular_db):
     scaffolds = []
@@ -237,7 +245,7 @@ def plot_cluster_DBSCAN(csv_results,
                         tanimoto_thr,
                         similarity_thrs,
                         outname):
-    plt.figure(figsize=(8,6), dpi=200)
+    plt.figure(figsize=(10,6), dpi=500)
     for sim_thr in similarity_thrs:
         print(sim_thr)
         num_clusters, x_values = cluster_DBSCAN(csv_results=csv_results,
@@ -246,12 +254,14 @@ def plot_cluster_DBSCAN(csv_results,
                                                 gscore_ind_thr=gscore_ind_thr,
                                                 tanimoto_thr=tanimoto_thr,
                                                 similarity_thr=sim_thr)
+        print(num_clusters, x_values)
         plt.plot(x_values, num_clusters, label='DBSCAN eps=%.2f'%sim_thr, marker='o')
-    plt.xlabel('Outer loop')
+    plt.xlabel('Affinity AL Cycle')
     plt.ylabel('DBSCAN scaffolds clusters')
-    plt.title('Scaffold evolution along outer loops')
+    #plt.title('Scaffold evolution along outer loops')
     plt.legend()
-    plt.savefig(outname+'.png')
+    plt.ylim((0, 2000))
+    plt.savefig(outname+'.pdf')
 
 def new_scaffolds(csv_results,
                   smi_specific,
@@ -345,3 +355,170 @@ def map_ids_filtered_PAINS_ADMET_mols(csv_results, pains_admet_csv, outname):
 
     df_map.to_csv(outname, index=False)
     
+    
+def get_metrics_generation(resdir, n):
+    """Get the metrics of the whole generation:
+        Ngen = number of molecules to generate.\
+        Nval = number of valid molecules.\
+        Nuniq = number of unique molecules.\
+        Nunk = number of unknown molecules (not in the specific set).
+        
+        Validity = Nval/Ngen x 100\
+        Uniqueness = Nuniq/Nval x 100\
+        Unknown = Nunk/Nval x 100"""
+    
+    generated = [7500]*40 + [3500]*140 # this is case dependent!!
+    print(len(generated))
+    print(generated)
+
+    valid = []
+    uniq = []
+    unk = []
+    for i in range(1,41):
+        print(i)
+        smiles = pd.read_csv('%s/outer_1/%s_%s/gensim_nocatalog_generated_smiles.csv'%(resdir,n,i))['smiles'].tolist()
+        valid.append(len(smiles))
+        all_mols = [mol.Mol(smile=x, allparamaters=True) for x in smiles]
+        mols = []
+        for mol1 in all_mols:
+            try:
+                atoms = mol1.NumAtoms
+                mols.append(mol1)
+            except:
+                print('Error')
+                continue
+
+        mols_db = moldb.MolDB(molList=mols, verbose=False)
+        mols_db.filterSimilarity(simt=1, alg='Morgan4',verbose=False)
+        uniq.append(len(mols_db.dicDB))
+        
+        specific = pd.read_csv('%s/outer_1/%s_%s/gensim_nocatalog_specific_smiles.csv'%(resdir,n,i))['smiles'].tolist()
+        all_spec_mols = [mol.Mol(smile=x, allparamaters=True) for x in specific]
+        specific_mols = []
+        for mol2 in all_spec_mols:
+            try:
+                atoms = mol2.NumAtoms
+                specific_mols.append(mol2)
+            except:
+                print('Error')
+                continue
+            
+        specific_mols_db = moldb.MolDB(molList=specific_mols, verbose=False)
+        specific_mols_db.filterSimilarity(simt=1, alg='Morgan4',verbose=False)
+        
+        joint = moldb.joinMolDBs([mols_db,specific_mols_db], simt=1)
+        print(len(joint.dicDB))
+        print(len(specific_mols_db.dicDB))
+        print(len(mols_db.dicDB))
+        print(len(specific_mols_db.dicDB) + len(mols_db.dicDB))
+        print(len(joint.dicDB) - len(specific_mols_db.dicDB))
+
+        unk.append(len(joint.dicDB)-len(specific_mols_db.dicDB))
+
+    for i in range(2,16):
+        for j in range(1,11):
+            print(i,j)
+            
+            smiles = pd.read_csv('%s/outer_%s/%s_%s/gensim_nocatalog_generated_smiles.csv'%(resdir,i,n,j))['smiles'].tolist()
+            valid.append(len(smiles))
+            
+            all_mols = [mol.Mol(smile=x, allparamaters=True) for x in smiles]
+            mols = []
+            for mol1 in all_mols:
+                print(mol1)
+                try:
+                    atoms = mol1.NumAtoms
+                    mols.append(mol1)
+                except:
+                    print('Error')
+                    continue
+            
+            mols_db = moldb.MolDB(molList=mols, verbose=False)
+            mols_db.filterSimilarity(simt=1, alg='Morgan4',verbose=False)
+            uniq.append(len(mols_db.dicDB))
+            
+            specific = pd.read_csv('%s/outer_%s/%s_%s/gensim_nocatalog_specific_smiles.csv'%(resdir,i,n,j))['smiles'].tolist()
+            all_spec_mols = [mol.Mol(smile=x, allparamaters=True) for x in specific]
+            specific_mols = []
+            for mol2 in all_spec_mols:
+                try:
+                    atoms = mol2.NumAtoms
+                    specific_mols.append(mol2)
+                except:
+                    print('Error')
+                    continue
+            specific_mols_db = moldb.MolDB(molList=specific_mols, verbose=False)
+            specific_mols_db.filterSimilarity(simt=1, alg='Morgan4',verbose=False)
+            
+            joint = moldb.joinMolDBs([mols_db,specific_mols_db], simt=1)
+            unk.append(len(joint.dicDB)-len(specific_mols_db.dicDB))   
+
+    print(len(valid))
+    print(valid)
+    print(len(uniq))
+    print(uniq)
+    print(len(unk))
+    print(unk)
+
+    df = pd.DataFrame({'Generated': generated, 'Valid': valid, 'Unique': uniq, 'Unknown': unk})
+    df.to_csv('%s/metrics_generation_inners_tmp.csv'%resdir, index=False)
+    
+    validity = []
+    for i in range(len(valid)):
+        validity.append(valid[i]/generated[i]*100)
+
+    uniqueness = []
+    for i in range(len(valid)):
+        if valid[i] == 0:
+            uniqueness.append(0)
+        else:
+            uniqueness.append(uniq[i]/valid[i]*100)
+
+    novelty = []
+    for i in range(len(valid)):
+        if uniq[i] == 0:
+            novelty.append(0)
+        else:
+            novelty.append(unk[i]/uniq[i]*100)
+
+    df2 = pd.DataFrame({'Generated': generated, 'Valid': valid, 'Unique': uniq, 'Unknown': unk,\
+                        'Validity': validity, 'Uniqueness': uniqueness, 'Novelty': novelty})
+    
+    df2.to_csv('%s/metrics_generation_inners.csv'%resdir, index=False)
+    print(df2)
+    
+def plot_metrics_generation(resdir, n):
+    df = pd.read_csv('%s/metrics_generation_inners.csv'%resdir)
+    print(df)
+    
+    plt.figure(figsize=(15, 5), dpi=500)
+    plt.plot(df.index, df['Validity'], marker='.', label='Validity')
+    plt.plot(df.index, df['Uniqueness'], marker='.', label='Uniqueness')
+    plt.plot(df.index, df['Novelty'], marker='.', label='Novelty')
+    
+    outer_sizes = [40, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10] # this is case dependent!
+    lines = list(itertools.accumulate(outer_sizes))
+    for line in lines:
+        plt.axvline(line, color='black', linestyle=':', alpha=0.5)
+            
+    plt.title('Metrics of Generation')
+    plt.xlabel('Affinity AL cycle')
+    plt.ylabel('Percentage (%)')
+    plt.legend()
+    plt.xticks(np.array(range(0, 190, 10)))
+    plt.savefig('%s/plots/metrics_generation_inners.pdf'%resdir)
+    
+def calculate_mean_std_metrics_generation(resdir):
+    df = pd.read_csv('%s/metrics_generation_inners.csv'%resdir)
+    print(df)
+    
+    mean_validity = df['Validity'].mean()
+    std_validity = df['Validity'].std()
+    mean_uniqueness = df['Uniqueness'].mean()
+    std_uniqueness = df['Uniqueness'].std()
+    mean_novelty = df['Novelty'].mean()
+    std_novelty = df['Novelty'].std()
+    
+    print('Mean validity: %.2f +/- %.2f'%(mean_validity, std_validity))
+    print('Mean uniqueness: %.2f +/- %.2f'%(mean_uniqueness, std_uniqueness))
+    print('Mean novelty: %.2f +/- %.2f'%(mean_novelty, std_novelty))
