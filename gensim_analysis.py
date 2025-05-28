@@ -287,6 +287,14 @@ def remove_duplicates_from_sdf(sdf_file):
     print('Duplicates removed successfully')
     print('The new sdf file contains %s molecules'%len(mols.mols))
     
+def create_specific_set(glide_smi, previous_smi, outdir, outname):
+    """It creates the specific set from the glide smiles and the previous smiles."""
+    
+    old_smi = moldb.MolDB(smiDB=previous_smi, verbose=False)
+    new_smi = moldb.MolDB(smiDB=glide_smi, verbose=False)
+    specific = moldb.joinMolDBs([old_smi, new_smi], simt=1)
+    specific.saveToSmi('%s/%s.smi'%(outdir, outname))
+    
 def plot_UMAP(list_smis, list_names, outdir, outname, sizes, alphas, markers, colors=None):
     """It plots the tSNE of all the sets indicated in the list."""
     total = len(list_smis)
