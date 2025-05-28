@@ -38,8 +38,8 @@ def extract_ligand_best_poses(csv_file, maegz_files, output_dir, outname, virus)
             st_gscore = s.property['r_i_docking_score']  # Gscore in maegz file
             
             # If the title matches the id and the gscore matches
-            if title == ids and round(st_gscore, 5) == round(gscores, 5):
-                
+            #if title == ids and round(st_gscore, 5) == round(gscores, 5):
+            if title == ids:   
                 print('\t', title, ids)
                 print('\t', round(gscores, 5), round(st_gscore, 5))
             
@@ -70,9 +70,9 @@ if __name__ == '__main__':
     virus = 'MERS' # Choose from: 'SARS2', 'SARS', 'MERS'
     target = '7eneC1' # Choose from: '7rnwA1', '2gx4A1', '7eneC1'
     csv_file = '%s/results_filt_8_catalogues.csv'%resdir
-    maegz_files = glob.glob('%s/glide_?/docking/%s_%s_pv*.maegz'%(resdir,virus, target))
+    maegz_files = glob.glob('%s/glide_?/docking/%s_%s_pv_best.maegz'%(resdir,virus, target))
     maegz_files.sort()
-    maegz_files2 = glob.glob('%s/glide_??/docking/%s_%s_pv.maegz'%(resdir, virus, target))
+    maegz_files2 = glob.glob('%s/glide_??/docking/%s_%s_pv_best.maegz'%(resdir, virus, target))
     maegz_files2.sort()
     maegz_files = maegz_files + maegz_files2
     outdir = resdir
