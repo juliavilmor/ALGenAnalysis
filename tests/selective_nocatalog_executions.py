@@ -479,30 +479,6 @@ if __name__ == "__main__":
     plt.savefig('%s/plots/summary_generation_extended.pdf'%resdir)
     """
 
-    # PLOT THE METRICS OF GENERATION --> NO (this is wrong)
-    """
-    df = pd.read_csv('%s/summary_selective_nocatalog_extended_metrics.csv'%resdir, index_col=0)
-    df = df.T
-    #df.reset_index(inplace=True)
-    df['cycle'] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
-    df.index = df['cycle']
-    df = df[['validity', 'perc_inner_al', 'uniqueness', 'perc_outer_al', 'novelty']]
-    df = df.rename(columns={"validity": "Validity", "perc_inner_al": "Chemical AL",\
-                        "uniqueness": "Uniqueness", "perc_outer_al": "Affinity AL",\
-                        "novelty": "Novelty"})
-    print(df)
-
-    plt.figure(figsize=(10, 6), dpi=500)
-    for column in df.columns:
-        plt.plot(df.index, df[column], marker='o', label=column)
-
-    plt.title('Metrics of Generation')
-    plt.xlabel('Affinity AL cycle')
-    plt.ylabel('Percentage (%)')
-    plt.legend()
-    plt.savefig('%s/plots/metrics_generation.png'%resdir)
-    """
-
     # PLOT METRICS VALIDITY, UNIQUENESS AND NOVELTY FOR ALL INNER ROUNDS
     from MolecularAnalysis import moldb, mol
 
