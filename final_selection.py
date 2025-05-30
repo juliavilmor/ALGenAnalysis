@@ -356,7 +356,7 @@ def map_ids_filtered_PAINS_ADMET_mols(csv_results, pains_admet_csv, outname):
     df_map.to_csv(outname, index=False)
     
     
-def get_metrics_generation(resdir, n):
+def get_metrics_generation(resdir, outer_name, inner_name, n, list_inners_per_outer):
     """Get the metrics of the whole generation:
         Ngen = number of molecules to generate.\
         Nval = number of valid molecules.\
@@ -367,59 +367,26 @@ def get_metrics_generation(resdir, n):
         Uniqueness = Nuniq/Nval x 100\
         Unknown = Nunk/Nval x 100"""
     
-    generated = [7500]*40 + [3500]*140 # this is case dependent!!
+    outers = len(list_inners_per_outer)
+    inners = sum(list_inners_per_outer)
+    print('Number of outers:', outers)
+    print('Number of inners:', inners)
+    
+    #generated = [7500]*40 + [3500]*140 # this is case dependent!!
+    generated = [5000]*inners 
     print(len(generated))
     print(generated)
 
     valid = []
     uniq = []
     unk = []
-    for i in range(1,41):
-        print(i)
-        smiles = pd.read_csv('%s/outer_1/%s_%s/gensim_nocatalog_generated_smiles.csv'%(resdir,n,i))['smiles'].tolist()
-        valid.append(len(smiles))
-        all_mols = [mol.Mol(smile=x, allparamaters=True) for x in smiles]
-        mols = []
-        for mol1 in all_mols:
-            try:
-                atoms = mol1.NumAtoms
-                mols.append(mol1)
-            except:
-                print('Error')
-                continue
 
-        mols_db = moldb.MolDB(molList=mols, verbose=False)
-        mols_db.filterSimilarity(simt=1, alg='Morgan4',verbose=False)
-        uniq.append(len(mols_db.dicDB))
-        
-        specific = pd.read_csv('%s/outer_1/%s_%s/gensim_nocatalog_specific_smiles.csv'%(resdir,n,i))['smiles'].tolist()
-        all_spec_mols = [mol.Mol(smile=x, allparamaters=True) for x in specific]
-        specific_mols = []
-        for mol2 in all_spec_mols:
-            try:
-                atoms = mol2.NumAtoms
-                specific_mols.append(mol2)
-            except:
-                print('Error')
-                continue
-            
-        specific_mols_db = moldb.MolDB(molList=specific_mols, verbose=False)
-        specific_mols_db.filterSimilarity(simt=1, alg='Morgan4',verbose=False)
-        
-        joint = moldb.joinMolDBs([mols_db,specific_mols_db], simt=1)
-        print(len(joint.dicDB))
-        print(len(specific_mols_db.dicDB))
-        print(len(mols_db.dicDB))
-        print(len(specific_mols_db.dicDB) + len(mols_db.dicDB))
-        print(len(joint.dicDB) - len(specific_mols_db.dicDB))
-
-        unk.append(len(joint.dicDB)-len(specific_mols_db.dicDB))
-
-    for i in range(2,16):
-        for j in range(1,11):
+    for i in range(1,outers+1):
+        for j in range(1,list_inners_per_outer[i-1]+1):
             print(i,j)
             
-            smiles = pd.read_csv('%s/outer_%s/%s_%s/gensim_nocatalog_generated_smiles.csv'%(resdir,i,n,j))['smiles'].tolist()
+            file = glob.glob('%s/%s%s_unknown/%s%s_%s/*_generated_smiles.csv'%(resdir,outer_name,i,inner_name,i,j))[0]
+            smiles = pd.read_csv(file)['smiles'].tolist()
             valid.append(len(smiles))
             
             all_mols = [mol.Mol(smile=x, allparamaters=True) for x in smiles]
@@ -437,7 +404,8 @@ def get_metrics_generation(resdir, n):
             mols_db.filterSimilarity(simt=1, alg='Morgan4',verbose=False)
             uniq.append(len(mols_db.dicDB))
             
-            specific = pd.read_csv('%s/outer_%s/%s_%s/gensim_nocatalog_specific_smiles.csv'%(resdir,i,n,j))['smiles'].tolist()
+            file2 = glob.glob('%s/%s%s_unknown/%s%s_%s/*_specific_smiles.csv'%(resdir,outer_name,i,inner_name,i,j))[0]
+            specific = pd.read_csv(file2)['smiles'].tolist()
             all_spec_mols = [mol.Mol(smile=x, allparamaters=True) for x in specific]
             specific_mols = []
             for mol2 in all_spec_mols:
@@ -461,7 +429,7 @@ def get_metrics_generation(resdir, n):
     print(unk)
 
     df = pd.DataFrame({'Generated': generated, 'Valid': valid, 'Unique': uniq, 'Unknown': unk})
-    df.to_csv('%s/metrics_generation_inners_tmp.csv'%resdir, index=False)
+    df.to_csv('%s/metrics_generation_inners_tmp_unknown.csv'%resdir, index=False)
     
     validity = []
     for i in range(len(valid)):
@@ -484,11 +452,11 @@ def get_metrics_generation(resdir, n):
     df2 = pd.DataFrame({'Generated': generated, 'Valid': valid, 'Unique': uniq, 'Unknown': unk,\
                         'Validity': validity, 'Uniqueness': uniqueness, 'Novelty': novelty})
     
-    df2.to_csv('%s/metrics_generation_inners.csv'%resdir, index=False)
+    df2.to_csv('%s/metrics_generation_inners_unknown.csv'%resdir, index=False)
     print(df2)
     
-def plot_metrics_generation(resdir, n):
-    df = pd.read_csv('%s/metrics_generation_inners.csv'%resdir)
+def plot_metrics_generation(metrics_csv, output, list_inners_per_outer):
+    df = pd.read_csv(metrics_csv)
     print(df)
     
     plt.figure(figsize=(15, 5), dpi=500)
@@ -496,8 +464,7 @@ def plot_metrics_generation(resdir, n):
     plt.plot(df.index, df['Uniqueness'], marker='.', label='Uniqueness')
     plt.plot(df.index, df['Novelty'], marker='.', label='Novelty')
     
-    outer_sizes = [40, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10] # this is case dependent!
-    lines = list(itertools.accumulate(outer_sizes))
+    lines = list(itertools.accumulate(list_inners_per_outer))
     for line in lines:
         plt.axvline(line, color='black', linestyle=':', alpha=0.5)
             
@@ -505,11 +472,11 @@ def plot_metrics_generation(resdir, n):
     plt.xlabel('Affinity AL cycle')
     plt.ylabel('Percentage (%)')
     plt.legend()
-    plt.xticks(np.array(range(0, 190, 10)))
-    plt.savefig('%s/plots/metrics_generation_inners.pdf'%resdir)
+    plt.xticks(np.array(range(0, sum(list_inners_per_outer), 10)))
+    plt.savefig(output)
     
-def calculate_mean_std_metrics_generation(resdir):
-    df = pd.read_csv('%s/metrics_generation_inners.csv'%resdir)
+def calculate_mean_std_metrics_generation(metrics_csv):
+    df = pd.read_csv(metrics_csv)
     print(df)
     
     mean_validity = df['Validity'].mean()
