@@ -385,7 +385,7 @@ def get_metrics_generation(resdir, outer_name, inner_name, n, list_inners_per_ou
         for j in range(1,list_inners_per_outer[i-1]+1):
             print(i,j)
             
-            file = glob.glob('%s/%s%s_unknown/%s%s_%s/*_generated_smiles.csv'%(resdir,outer_name,i,inner_name,i,j))[0]
+            file = glob.glob('%s/%s%s/%s%s_%s/*_generated_smiles.csv'%(resdir,outer_name,i,inner_name,i,j))[0]
             smiles = pd.read_csv(file)['smiles'].tolist()
             valid.append(len(smiles))
             
@@ -404,7 +404,7 @@ def get_metrics_generation(resdir, outer_name, inner_name, n, list_inners_per_ou
             mols_db.filterSimilarity(simt=1, alg='Morgan4',verbose=False)
             uniq.append(len(mols_db.dicDB))
             
-            file2 = glob.glob('%s/%s%s_unknown/%s%s_%s/*_specific_smiles.csv'%(resdir,outer_name,i,inner_name,i,j))[0]
+            file2 = glob.glob('%s/%s%s/%s%s_%s/*_specific_smiles.csv'%(resdir,outer_name,i,inner_name,i,j))[0]
             specific = pd.read_csv(file2)['smiles'].tolist()
             all_spec_mols = [mol.Mol(smile=x, allparamaters=True) for x in specific]
             specific_mols = []
@@ -429,7 +429,7 @@ def get_metrics_generation(resdir, outer_name, inner_name, n, list_inners_per_ou
     print(unk)
 
     df = pd.DataFrame({'Generated': generated, 'Valid': valid, 'Unique': uniq, 'Unknown': unk})
-    df.to_csv('%s/metrics_generation_inners_tmp_unknown.csv'%resdir, index=False)
+    df.to_csv('%s/metrics_generation_inners_tmp.csv'%resdir, index=False)
     
     validity = []
     for i in range(len(valid)):
@@ -452,17 +452,18 @@ def get_metrics_generation(resdir, outer_name, inner_name, n, list_inners_per_ou
     df2 = pd.DataFrame({'Generated': generated, 'Valid': valid, 'Unique': uniq, 'Unknown': unk,\
                         'Validity': validity, 'Uniqueness': uniqueness, 'Novelty': novelty})
     
-    df2.to_csv('%s/metrics_generation_inners_unknown.csv'%resdir, index=False)
+    df2.to_csv('%s/metrics_generation_inners.csv'%resdir, index=False)
     print(df2)
     
 def plot_metrics_generation(metrics_csv, output, list_inners_per_outer):
     df = pd.read_csv(metrics_csv)
+    df['inner'] = df.index + 1
     print(df)
     
     plt.figure(figsize=(15, 5), dpi=500)
-    plt.plot(df.index, df['Validity'], marker='.', label='Validity')
-    plt.plot(df.index, df['Uniqueness'], marker='.', label='Uniqueness')
-    plt.plot(df.index, df['Novelty'], marker='.', label='Novelty')
+    plt.plot(df['inner'], df['Validity'], marker='.', label='Validity')
+    plt.plot(df['inner'], df['Uniqueness'], marker='.', label='Uniqueness')
+    plt.plot(df['inner'], df['Novelty'], marker='.', label='Novelty')
     
     lines = list(itertools.accumulate(list_inners_per_outer))
     for line in lines:
@@ -489,3 +490,145 @@ def calculate_mean_std_metrics_generation(metrics_csv):
     print('Mean validity: %.2f +/- %.2f'%(mean_validity, std_validity))
     print('Mean uniqueness: %.2f +/- %.2f'%(mean_uniqueness, std_uniqueness))
     print('Mean novelty: %.2f +/- %.2f'%(mean_novelty, std_novelty))
+    
+def plot_QED_generation(resdir, outer_name, inner_name, n, list_inners_per_outer):
+    "It plots the mean QED of the generated molecules per inner loop."
+    
+    outers = len(list_inners_per_outer)
+    inners = sum(list_inners_per_outer)
+    print('Number of outers:', outers)
+    print('Number of inners:', inners)
+    
+    mean_qeds = []
+    std_qeds = []
+    for i in range(1,outers+1):
+        for j in range(1,list_inners_per_outer[i-1]+1):
+            print(i,j)
+            file = glob.glob('%s/%s%s/%s%s_%s/*_generated_smiles.csv'%(resdir,outer_name,i,inner_name,i,j))[0]
+            df = pd.read_csv(file)
+            mean_qed = df['QED'].mean()
+            mean_qeds.append(mean_qed)
+            std_qed = df['QED'].std()
+            std_qeds.append(std_qed)
+            
+    df = pd.DataFrame({'inner': range(1, inners + 1), 'mean_QED': mean_qeds, 'std_QED': std_qeds})
+    df.to_csv('%s/QED_per_inner.csv'%(resdir), index=False)
+    
+    plt.figure(figsize=(15, 5), dpi=500)
+    plt.errorbar(df['inner'], df['mean_QED'], yerr=df['std_QED'], fmt='.', label='Mean QED', capsize=3, linestyle='-', color='blue', ecolor='lightblue', elinewidth=2, markeredgewidth=2)
+
+    lines = list(itertools.accumulate(list_inners_per_outer))
+    for line in lines:
+        plt.axvline(line, color='black', linestyle=':', alpha=0.5)
+    plt.title('Mean QED of generated molecules')
+    plt.xlabel('Affinity AL cycle')
+    plt.ylabel('Mean QED')
+    plt.legend()
+    plt.xticks(np.array(range(0, sum(list_inners_per_outer), 10)))
+    plt.ylim((0, 1))
+    plt.savefig('%s/QED_per_inner.pdf'%(resdir))
+    
+def plot_SA_generation(resdir, outer_name, inner_name, n, list_inners_per_outer):
+    """It plots the mean SA of the generated molecules per inner loop."""
+    
+    outers = len(list_inners_per_outer)
+    inners = sum(list_inners_per_outer)
+    print('Number of outers:', outers)
+    print('Number of inners:', inners)
+    
+    mean_sas = []
+    std_sas = []
+    for i in range(1,outers+1):
+        for j in range(1,list_inners_per_outer[i-1]+1):
+            print(i,j)
+            file = glob.glob('%s/%s%s/%s%s_%s/*_generated_smiles.csv'%(resdir,outer_name,i,inner_name,i,j))[0]
+            df = pd.read_csv(file)
+            mean_sa = df['SAscore'].mean()
+            mean_sas.append(mean_sa)
+            std_sa = df['SAscore'].std()
+            std_sas.append(std_sa)
+            
+    df = pd.DataFrame({'inner': range(1, inners + 1), 'mean_SA': mean_sas, 'std_SA': std_sas})
+    df.to_csv('%s/SA_per_inner.csv'%(resdir), index=False)
+    
+    plt.figure(figsize=(15, 5), dpi=500)
+    plt.errorbar(df['inner'], df['mean_SA'], yerr=df['std_SA'], fmt='.', label='Mean SA', capsize=3, linestyle='-', color='blue', ecolor='lightblue', elinewidth=2, markeredgewidth=2)
+
+    lines = list(itertools.accumulate(list_inners_per_outer))
+    for line in lines:
+        plt.axvline(line, color='black', linestyle=':', alpha=0.5)
+    plt.title('Mean SA of generated molecules')
+    plt.xlabel('Affinity AL cycle')
+    plt.ylabel('Mean SA')
+    plt.legend()
+    plt.xticks(np.array(range(0, sum(list_inners_per_outer), 10)))
+    plt.ylim((0, 10))
+    plt.savefig('%s/SA_per_inner.pdf'%(resdir))
+    
+def plot_TA_similarity_generation(resdir, outer_name, inner_name, n, list_inners_per_outer):
+    """It plots the mean TA similarity of the generated molecules per inner loop."""
+    
+    outers = len(list_inners_per_outer)
+    inners = sum(list_inners_per_outer)
+    print('Number of outers:', outers)
+    print('Number of inners:', inners)
+    
+    mean_tas = []
+    std_tas = []
+    for i in range(1,outers+1):
+        for j in range(1,list_inners_per_outer[i-1]+1):
+            print(i,j)
+            file = glob.glob('%s/%s%s/%s%s_%s/*_generated_smiles.csv'%(resdir,outer_name,i,inner_name,i,j))[0]
+            df = pd.read_csv(file)
+            mean_ta = df['tan_mean'].mean()
+            mean_tas.append(mean_ta)
+            std_ta = df['tan_mean'].std()
+            std_tas.append(std_ta)
+            
+    df = pd.DataFrame({'inner': range(1, inners + 1), 'mean_TA': mean_tas, 'std_TA': std_tas})
+    df.to_csv('%s/TA_per_inner.csv'%(resdir), index=False)
+    
+    plt.figure(figsize=(15, 5), dpi=500)
+    plt.errorbar(df['inner'], df['mean_TA'], yerr=df['std_TA'], fmt='.', label='Mean TA similarity', capsize=3, linestyle='-', color='blue', ecolor='lightblue', elinewidth=2, markeredgewidth=2)
+
+    lines = list(itertools.accumulate(list_inners_per_outer))
+    for line in lines:
+        plt.axvline(line, color='black', linestyle=':', alpha=0.5)
+    plt.title('Mean TA similarity of generated molecules')
+    plt.xlabel('Affinity AL cycle')
+    plt.ylabel('Mean TA similarity')
+    plt.legend()
+    plt.xticks(np.array(range(0, sum(list_inners_per_outer), 10)))
+    plt.ylim((0, 1))
+    plt.savefig('%s/TA_per_inner.pdf'%(resdir))
+    
+def plot_counts_inner_AL_filters(resdir, outer_name, inner_name, n, list_inners_per_outer):
+    "It plots the counts of molecules applying the inner AL filters"
+    
+    outers = len(list_inners_per_outer)
+    inners = sum(list_inners_per_outer)
+    print('Number of outers:', outers)
+    print('Number of inners:', inners)
+    
+    counts = []
+    for i in range(1,outers+1):
+        for j in range(1,list_inners_per_outer[i-1]+1):
+            print(i,j)
+            #print('%s/%s%s/%s%s_%s/*_generated_smiles_threshold.csv'%(resdir,outer_name,i,inner_name,i,j+1))
+            file = glob.glob('%s/%s%s/%s%s_%s/*_generated_smiles_threshold.csv'%(resdir,outer_name,i,inner_name,i,j+1))[0]
+            df = pd.read_csv(file)
+            counts.append(len(df))
+    print(counts)
+    
+    plt.figure(figsize=(15, 5), dpi=500)
+    plt.plot(range(1, inners + 1), counts, marker='.', label='Counts', color='blue')
+    lines = list(itertools.accumulate(list_inners_per_outer))
+    for line in lines:
+        plt.axvline(line, color='black', linestyle=':', alpha=0.5)
+    plt.title('Counts of molecules applying inner AL filters')
+    plt.xlabel('Affinity AL cycle')
+    plt.ylabel('Counts')
+    plt.legend()
+    plt.xticks(np.array(range(0, sum(list_inners_per_outer), 10)))
+    plt.savefig('%s/counts_inner_AL_filters.pdf'%(resdir))
+    
