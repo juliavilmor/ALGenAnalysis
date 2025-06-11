@@ -580,9 +580,9 @@ def plot_TA_similarity_generation(resdir, outer_name, inner_name, n, list_inners
             print(i,j)
             file = glob.glob('%s/%s%s/%s%s_%s/*_generated_smiles.csv'%(resdir,outer_name,i,inner_name,i,j))[0]
             df = pd.read_csv(file)
-            mean_ta = df['tan_mean'].mean()
+            mean_ta = df['tan_max'].mean()
             mean_tas.append(mean_ta)
-            std_ta = df['tan_mean'].std()
+            std_ta = df['tan_max'].std()
             std_tas.append(std_ta)
             
     df = pd.DataFrame({'inner': range(1, inners + 1), 'mean_TA': mean_tas, 'std_TA': std_tas})
@@ -594,9 +594,9 @@ def plot_TA_similarity_generation(resdir, outer_name, inner_name, n, list_inners
     lines = list(itertools.accumulate(list_inners_per_outer))
     for line in lines:
         plt.axvline(line, color='black', linestyle=':', alpha=0.5)
-    plt.title('Mean TA similarity of generated molecules')
+    plt.title('Max TA similarity of generated molecules')
     plt.xlabel('Affinity AL cycle')
-    plt.ylabel('Mean TA similarity')
+    plt.ylabel('Max TA similarity')
     plt.legend()
     plt.xticks(np.array(range(0, sum(list_inners_per_outer), 10)))
     plt.ylim((0, 1))
