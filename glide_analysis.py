@@ -265,6 +265,67 @@ def cumulative_histograms(final_csvs, initial_csvs, list_of_labels, list_of_colo
     if savefig:
         plt.savefig(out)
     
+def get_tensordti_results(list_csvs, outdir):
+    """ It merges the results of Tensordti and save it as a csv file. 
+        The csvs should be the results of Tensordti for each virus."""
+
+    ids_df = pd.read_csv(list_csvs[0])
+    ids_df = ids_df[['protein_id', 'drug_id']]
+    
+    for csv in list_csvs:
+        virus = csv.split('/')[-1].split('_')[0]
+        virus_df = pd.read_csv(csv)
+        virus_df = virus_df.rename(columns={'prediction_score':f'prediction_score_{virus}', 'confidence_score':f'confidence_score_{virus}'})
+
+        res_df = pd.merge(ids_df, virus_df, on=['protein_id', 'drug_id'], how='right')
+
+    res_df['prediction_score_global'] = res_df[[f'prediction_score_{v}' for v in ['SARS2', 'SARS', 'MERS']]].mean(axis=1)
+    res_df['confidence_score_global'] = res_df[[f'confidence_score_{v}' for v in ['SARS2', 'SARS', 'MERS']]].mean(axis=1)
+    
+    res_df.to_csv('%s/results_tensordti.csv'%outdir, index=False)
+
+def plot_histograms_tensordti(results_csv, virus, outdir):
+    """It plots the histograms of the Tensordti results."""
+
+    df = pd.read_csv(results_csv)
+    plt.figure(figsize=(10, 8), dpi=200)
+    sns.histplot(data=df, x=f'prediction_score_{virus}').set(title='Tensordti prediction scores')
+    plt.xlabel('Prediction score')
+    plt.ylabel('Counts')
+    plt.savefig('%s/tensordti_prediction_scores_%s.png'%(outdir,virus))
+
+    plt.figure(figsize=(10, 8), dpi=200)
+    sns.histplot(data=df, x=f'confidence_score_{virus}').set(title='Tensordti confidence scores')
+    plt.xlabel('Confidence score')
+    plt.ylabel('Counts')
+    plt.savefig('%s/tensordti_confidence_scores_%s.png'%(outdir,virus))
+
+def plot_scatterplot_tensordti(results_csv, virus, outdir):
+    """It plots the scatterplot of the Tensordti results."""
+
+    df = pd.read_csv(results_csv)
+    plt.figure(figsize=(10, 8), dpi=200)
+    sns.scatterplot(data=df, x=f'prediction_score_{virus}', y=f'confidence_score_{virus}').set(title='Tensordti prediction vs confidence scores')
+    plt.xlabel('Prediction score')
+    plt.ylabel('Confidence score')
+    plt.savefig('%s/tensordti_scatterplot_%s.png'%(outdir,virus))
+
+def filter_tensordti_results(results_csv, global_prediction_threshold, individual_prediction_threshold,
+                             global_confidence_threshold, individual_confidence_threshold, outdir):
+    
+    """It filters the Tensordti results based on the prediction and confidence scores."""
+
+    df = pd.read_csv(results_csv)
+    df_filtered = df[(df['prediction_score_global'] >= global_prediction_threshold) & (df['prediction_score_SARS2'] >= individual_prediction_threshold) & (df['prediction_score_SARS'] >= global_prediction_threshold) & (df['prediction_score_MERS2'] >= global_prediction_threshold)]
+    df_filtered = df[(df['confidence_score_global'] >= global_confidence_threshold) & (df['confidence_score_SARS2'] >= individual_confidence_threshold) & (df['confidence_score_SARS'] >= global_confidence_threshold) & (df['confidence_score_MERS2'] >= global_confidence_threshold)]
+    
+    print(f"From {len(df)} molecules, {len(df_filtered)} were kept after filtering. ({len(df) - len(df_filtered)} were removed.)")
+    
+    if not os.path.exists(outdir):
+        os.mkdir(outdir)
+    
+    df_filtered.to_csv(f'{outdir}/results_tensordti_filtered.csv', index=False)
+
 
 if __name__ == "__main__":
     
