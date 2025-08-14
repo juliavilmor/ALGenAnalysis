@@ -268,20 +268,25 @@ def cumulative_histograms(final_csvs, initial_csvs, list_of_labels, list_of_colo
 def get_tensordti_results(list_csvs, outdir):
     """ It merges the results of Tensordti and save it as a csv file. 
         The csvs should be the results of Tensordti for each virus."""
-
-    ids_df = pd.read_csv(list_csvs[0])
-    ids_df = ids_df[['protein_id', 'drug_id']]
     
+    dfs = []
     for csv in list_csvs:
         virus = csv.split('/')[-1].split('_')[0]
         virus_df = pd.read_csv(csv)
-        virus_df = virus_df.rename(columns={'prediction_score':f'prediction_score_{virus}', 'confidence_score':f'confidence_score_{virus}'})
-
-        res_df = pd.merge(ids_df, virus_df, on=['protein_id', 'drug_id'], how='right')
+        virus_df = virus_df.rename(columns={'prediction_score':f'prediction_score_{virus}',
+                                            'prediction':f'prediction_{virus}',
+                                            'confidence_score':f'confidence_score_{virus}'})
+        virus_df = virus_df[['drug_id', f'prediction_score_{virus}', f'prediction_{virus}', f'confidence_score_{virus}']]
+        dfs.append(virus_df)
+        
+    res_df = dfs[0]
+    for df in dfs[1:]:
+        res_df = res_df.merge(df, on='drug_id', how='outer')
 
     res_df['prediction_score_global'] = res_df[[f'prediction_score_{v}' for v in ['SARS2', 'SARS', 'MERS']]].mean(axis=1)
     res_df['confidence_score_global'] = res_df[[f'confidence_score_{v}' for v in ['SARS2', 'SARS', 'MERS']]].mean(axis=1)
     
+    print(res_df)
     res_df.to_csv('%s/results_tensordti.csv'%outdir, index=False)
 
 def plot_histograms_tensordti(results_csv, virus, outdir):
