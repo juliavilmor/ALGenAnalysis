@@ -440,6 +440,24 @@ def superpose_specific_set_evolution(results_dir_1, results_dir_2, gscore_values
     plt.legend(loc='lower right')
     plt.savefig('%s/%s.pdf'%(outdir, outname))
     
+def tensordti_csv_format(csv, outer):
+    """
+    The output should be in the following format:
+    id,smiles
+
+    Args:
+        csv (str): all_generated_molecules.csv
+        outer (int): outer round number
+    """
+    df = pd.read_csv(csv)
+    df = df.rename(columns={'Unnamed: 0': 'id'})
+    df['id'] = str(outer) + '_' + df['inner'].astype(str) + '_' + df['id'].astype(str)
+    df = df[['id', 'smiles']]
+    
+    df = df.drop_duplicates(subset=['smiles'])
+    
+    df.to_csv(csv.replace('.csv', '_tensordti.csv'), index=False)
+    
     
 if __name__ == "__main__":
     
