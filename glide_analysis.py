@@ -336,6 +336,22 @@ def plot_scatterplot_tensordti(results_csv, virus, outdir):
     plt.ylabel('Confidence score')
     plt.legend(title='Prediction', loc='lower right')
     plt.savefig('%s/tensordti_scatterplot_%s.png'%(outdir,virus))
+    
+def plot_confidence_by_prediction(results_csv, virus, outdir):
+    """It plots the confidence scores by prediction scores for Tensordti results."""
+
+    df = pd.read_csv(results_csv)
+    
+    plt.figure(figsize=(10, 8), dpi=200)
+    plt.hist([df[df[f'prediction_{virus}'] == 1][f'confidence_score_{virus}'],
+             df[df[f'prediction_{virus}'] == 0][f'confidence_score_{virus}']],
+             bins=30, stacked=True, label=['Positive', 'Negative'], alpha = 0.7
+    )
+    plt.xlabel('Confidence score')
+    plt.ylabel('Counts')
+    plt.title(f'Tensordti confidence scores by prediction for {virus}')
+    plt.legend(title='Prediction', loc='upper right')
+    plt.savefig('%s/tensordti_confidence_by_prediction_%s.png'%(outdir,virus))
 
 def filter_tensordti_results(results_csv, global_prediction_threshold, individual_prediction_threshold,
                              global_confidence_threshold, individual_confidence_threshold, outdir):

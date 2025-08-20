@@ -471,6 +471,8 @@ def remove_duplicates_from_csv(csv_file):
     unique_df = df[df['smiles'].isin(unique_smiles)]
     unique_df.to_csv(csv_file.replace('.csv', '_unique.csv'), index=False)
     
+    print('From %s molecules, %s unique molecules were found.'%(len(df), len(unique_df)))
+    
     
 if __name__ == "__main__":
     
