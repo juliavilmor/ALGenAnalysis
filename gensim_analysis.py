@@ -439,7 +439,7 @@ def superpose_specific_set_evolution(results_dir_1, results_dir_2, gscore_values
     
     plt.legend(loc='lower right')
     plt.savefig('%s/%s.pdf'%(outdir, outname))
-    
+
 def tensordti_csv_format(csv, outer):
     """
     The output should be in the following format:
@@ -457,6 +457,19 @@ def tensordti_csv_format(csv, outer):
     df = df.drop_duplicates(subset=['smiles'])
     
     df.to_csv(csv.replace('.csv', '_tensordti.csv'), index=False)
+    
+def remove_duplicates_from_csv(csv_file):
+    """It removes duplicates from a csv file."""
+    
+    df = pd.read_csv(csv_file)
+    mol_list = df['smiles'].tolist()
+    mol_list = [mol.Mol(smile=smile) for smile in mol_list]
+    mols = moldb.MolDB(molList=mol_list, verbose=False)
+    mols.filterSimilarity(simt=1, alg='Morgan4', verbose=False)
+    unique_smiles = mols.smiles
+    
+    unique_df = df[df['smiles'].isin(unique_smiles)]
+    unique_df.to_csv(csv_file.replace('.csv', '_unique.csv'), index=False)
     
     
 if __name__ == "__main__":
