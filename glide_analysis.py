@@ -265,12 +265,10 @@ def cumulative_histograms(final_csvs, initial_csvs, list_of_labels, list_of_colo
     if savefig:
         plt.savefig(out)
     
-def get_tensordti_results(list_csvs, outdir):
+def get_tensordti_results(list_csvs, smiles_df, outdir):
     """ It merges the results of Tensordti and save it as a csv file. 
         The csvs should be the results of Tensordti for each virus."""
-    
-    list_csvs = [csv for csv in list_csvs if 'results_tensordti.csv' not in csv]
-    
+        
     dfs = []
     for csv in list_csvs:
         virus = csv.split('/')[-1].split('_')[0]
@@ -285,9 +283,19 @@ def get_tensordti_results(list_csvs, outdir):
     for df in dfs[1:]:
         res_df = res_df.merge(df, on='drug_id', how='outer')
 
+    # Calculate the mean prediction and confidence scores for global results
     res_df['prediction_score_global'] = res_df[[f'prediction_score_{v}' for v in ['SARS2', 'SARS', 'MERS']]].mean(axis=1)
     res_df['confidence_score_global'] = res_df[[f'confidence_score_{v}' for v in ['SARS2', 'SARS', 'MERS']]].mean(axis=1)
     
+    # Map with the SMILES
+    smiles_df = pd.read_csv(smiles_df)
+    res_df = res_df.merge(smiles_df, left_on='drug_id', right_on='id', how='left')
+    res_df = res_df.drop(columns=['id'])
+    cols = res_df.columns.tolist()
+    cols.insert(1, cols.pop(cols.index('smiles')))  # Move 'smiles' to the second position
+    res_df = res_df[cols]
+    
+    # Save the results
     print(res_df)
     res_df.to_csv('%s/results_tensordti.csv'%outdir, index=False)
 
