@@ -269,6 +269,8 @@ def get_tensordti_results(list_csvs, outdir):
     """ It merges the results of Tensordti and save it as a csv file. 
         The csvs should be the results of Tensordti for each virus."""
     
+    list_csvs = [csv for csv in list_csvs if 'results_tensordti.csv' not in csv]
+    
     dfs = []
     for csv in list_csvs:
         virus = csv.split('/')[-1].split('_')[0]
@@ -309,10 +311,22 @@ def plot_scatterplot_tensordti(results_csv, virus, outdir):
     """It plots the scatterplot of the Tensordti results."""
 
     df = pd.read_csv(results_csv)
+    df['highlight'] = df[f'prediction_{virus}'].apply(lambda x: 'positive' if x == 1 else 'negative')
+    
     plt.figure(figsize=(10, 8), dpi=200)
-    sns.scatterplot(data=df, x=f'prediction_score_{virus}', y=f'confidence_score_{virus}').set(title='Tensordti prediction vs confidence scores')
+    sns.scatterplot(
+        data=df,
+        x=f'prediction_score_{virus}',
+        y=f'confidence_score_{virus}',
+        hue='highlight',
+        palette={'positive': 'blue', 'negative': 'lightgray'},
+        alpha=0.8,
+        linewidth=0
+    ).set(title='Tensordti prediction vs confidence scores')
+    
     plt.xlabel('Prediction score')
     plt.ylabel('Confidence score')
+    plt.legend(title='Prediction', loc='lower right')
     plt.savefig('%s/tensordti_scatterplot_%s.png'%(outdir,virus))
 
 def filter_tensordti_results(results_csv, global_prediction_threshold, individual_prediction_threshold,
@@ -321,8 +335,8 @@ def filter_tensordti_results(results_csv, global_prediction_threshold, individua
     """It filters the Tensordti results based on the prediction and confidence scores."""
 
     df = pd.read_csv(results_csv)
-    df_filtered = df[(df['prediction_score_global'] >= global_prediction_threshold) & (df['prediction_score_SARS2'] >= individual_prediction_threshold) & (df['prediction_score_SARS'] >= global_prediction_threshold) & (df['prediction_score_MERS2'] >= global_prediction_threshold)]
-    df_filtered = df[(df['confidence_score_global'] >= global_confidence_threshold) & (df['confidence_score_SARS2'] >= individual_confidence_threshold) & (df['confidence_score_SARS'] >= global_confidence_threshold) & (df['confidence_score_MERS2'] >= global_confidence_threshold)]
+    df_filtered = df[(df['prediction_score_global'] >= global_prediction_threshold) & (df['prediction_score_SARS2'] >= individual_prediction_threshold) & (df['prediction_score_SARS'] >= global_prediction_threshold) & (df['prediction_score_MERS'] >= global_prediction_threshold)]
+    df_filtered = df[(df['confidence_score_global'] <= global_confidence_threshold) & (df['confidence_score_SARS2'] <= individual_confidence_threshold) & (df['confidence_score_SARS'] <= global_confidence_threshold) & (df['confidence_score_MERS'] <= global_confidence_threshold)]
     
     print(f"From {len(df)} molecules, {len(df_filtered)} were kept after filtering. ({len(df) - len(df_filtered)} were removed.)")
     
@@ -330,6 +344,16 @@ def filter_tensordti_results(results_csv, global_prediction_threshold, individua
         os.mkdir(outdir)
     
     df_filtered.to_csv(f'{outdir}/results_tensordti_filtered.csv', index=False)
+
+def get_positives_intersection(results_csv, outdir):
+    """It gets the intersection of the positives from the Tensordti results."""
+
+    df = pd.read_csv(results_csv)
+    df_pos = df[(df['prediction_SARS2'] == 1) & (df['prediction_SARS'] == 1) & (df['prediction_MERS'] == 1)]
+    
+    df_pos.to_csv(f'{outdir}/results_tensordti_positives.csv', index=False)
+    
+    print(f"From {len(df)} molecules, {len(df_pos)} were positives. ({len(df) - len(df_pos)} were removed.)")
 
 
 if __name__ == "__main__":
