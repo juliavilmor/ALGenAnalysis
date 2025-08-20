@@ -343,8 +343,8 @@ def filter_tensordti_results(results_csv, global_prediction_threshold, individua
     """It filters the Tensordti results based on the prediction and confidence scores."""
 
     df = pd.read_csv(results_csv)
-    df_filtered = df[(df['prediction_score_global'] >= global_prediction_threshold) & (df['prediction_score_SARS2'] >= individual_prediction_threshold) & (df['prediction_score_SARS'] >= global_prediction_threshold) & (df['prediction_score_MERS'] >= global_prediction_threshold)]
-    df_filtered = df[(df['confidence_score_global'] <= global_confidence_threshold) & (df['confidence_score_SARS2'] <= individual_confidence_threshold) & (df['confidence_score_SARS'] <= global_confidence_threshold) & (df['confidence_score_MERS'] <= global_confidence_threshold)]
+    df_filtered = df[(df['prediction_score_global'] >= global_prediction_threshold) & (df['prediction_score_SARS2'] >= individual_prediction_threshold) & (df['prediction_score_SARS'] >= individual_prediction_threshold) & (df['prediction_score_MERS'] >= individual_prediction_threshold)]
+    df_filtered = df[(df['confidence_score_global'] <= global_confidence_threshold) & (df['confidence_score_SARS2'] <= individual_confidence_threshold) & (df['confidence_score_SARS'] <= individual_confidence_threshold) & (df['confidence_score_MERS'] <= individual_confidence_threshold)]
     
     print(f"From {len(df)} molecules, {len(df_filtered)} were kept after filtering. ({len(df) - len(df_filtered)} were removed.)")
     
