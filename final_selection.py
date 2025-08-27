@@ -632,3 +632,32 @@ def plot_counts_inner_AL_filters(resdir, outer_name, inner_name, n, list_inners_
     plt.xticks(np.array(range(0, sum(list_inners_per_outer), 10)))
     plt.savefig('%s/counts_inner_AL_filters.pdf'%(resdir))
     
+def get_results_csv_from_tensordti(resdir):
+    """It gets the results csv from the tensordti output files."""
+    
+    files1 = glob.glob(f'{resdir}/tensordti_?/results_tensordti_filtered_unique.csv')
+    files1.sort()
+    files2 = glob.glob(f'{resdir}/tensordti_??/results_tensordti_filtered_unique.csv')
+    files2.sort()
+    files = files1 + files2
+    dfs = [pd.read_csv(file) for file in files]
+    final_df = pd.concat(dfs, ignore_index=True)
+    print(final_df)
+    final_df.to_csv(f'{resdir}/results.csv', index=False)
+    
+def apply_SMARTS_catalogue_filters(results_csv, smiles_col, outdir):
+    from molecular_filters.molecular_filters import filter_PAINS, filter_Brenk, filter_NIH, filter_REOS
+    df = pd.read_csv(results_csv)
+    df[smiles_col] = df[smiles_col].apply(filter_PAINS)
+    df.dropna(subset=[smiles_col], inplace=True)
+    print(df.shape)
+    df[smiles_col] = df[smiles_col].apply(filter_Brenk)
+    df.dropna(subset=[smiles_col], inplace=True)
+    print(df.shape)
+    df[smiles_col] = df[smiles_col].apply(filter_NIH)
+    df.dropna(subset=[smiles_col], inplace=True)
+    print(df.shape)
+    df[smiles_col] = df[smiles_col].apply(filter_REOS)
+    df.dropna(subset=[smiles_col], inplace=True)
+    print(df.shape)
+    df.to_csv(f'{outdir}/results_filtered_SMARTS.csv', index=False)
