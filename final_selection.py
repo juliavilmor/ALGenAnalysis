@@ -646,7 +646,7 @@ def get_results_csv_from_tensordti(resdir):
     final_df.to_csv(f'{resdir}/results.csv', index=False)
     
 def apply_SMARTS_catalogue_filters(results_csv, smiles_col, outdir):
-    from molecular_filters.molecular_filters import filter_PAINS, filter_Brenk, filter_NIH, filter_REOS
+    from ALGenAnalysis.molecular_filters.molecular_filters import filter_PAINS, filter_Brenk, filter_NIH, filter_REOS
     df = pd.read_csv(results_csv)
     df[smiles_col] = df[smiles_col].apply(filter_PAINS)
     df.dropna(subset=[smiles_col], inplace=True)
