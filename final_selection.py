@@ -661,3 +661,68 @@ def apply_SMARTS_catalogue_filters(results_csv, smiles_col, outdir):
     df.dropna(subset=[smiles_col], inplace=True)
     print(df.shape)
     df.to_csv(f'{outdir}/results_filtered_SMARTS.csv', index=False)
+    
+    
+def cluster_DBSCAN_tensordti(csv_results,
+                            smi_specific,
+                            similarity_thr):
+
+    from sklearn.cluster import DBSCAN
+
+    df = pd.read_csv(csv_results)
+
+    df['outer'] = df['drug_id'].apply(lambda x: x.split('_')[0])
+    df['outer'] = df['outer'].astype(int)
+    total_outers = len(df['outer'].unique())
+
+    num_clusters = []
+    x_values = []
+    all_scaff_mols = []
+
+    for outer in range(total_outers + 1):
+        if outer == 0:
+            specific_db = moldb.MolDB(smiDB=smi_specific)
+            scaffold_db = get_scaffolds_db(specific_db)
+            all_scaff_mols.extend(scaffold_db.mols)
+            scaffold_db._get_similarity_matrix()
+            simmatrix = scaffold_db.simmatrix
+        else:
+            df_outer = df[df['outer'] == outer]
+            smiles = df_outer['smiles'].tolist()
+            ids = df_outer['drug_id'].tolist()
+            mol_list = [mol.Mol(smile=smile, name=ids[i]) for i, smile in enumerate(smiles)]
+            outer_db = moldb.MolDB(molList=mol_list)
+            scaffold_db = get_scaffolds_db(outer_db)
+            all_scaff_mols.extend(scaffold_db.mols)
+            scaffold_db = moldb.MolDB(molList=all_scaff_mols)
+            scaffold_db._get_similarity_matrix()
+            simmatrix = scaffold_db.simmatrix
+        clustering = DBSCAN(metric="precomputed",
+                            eps=1-similarity_thr,
+                            min_samples=1)
+        clustering.fit(1-simmatrix)
+        counter = Counter(clustering.labels_)
+        num_clusters.append(len(counter.keys()))
+        x_values.append(outer)
+
+    return num_clusters, x_values
+
+
+def plot_cluster_DBSCAN_tensordti(csv_results,
+                        smi_specific,
+                        similarity_thrs,
+                        outname):
+    plt.figure(figsize=(10,6), dpi=500)
+    for sim_thr in similarity_thrs:
+        print(sim_thr)
+        num_clusters, x_values = cluster_DBSCAN_tensordti(csv_results=csv_results,
+                                                        smi_specific=smi_specific,
+                                                        similarity_thr=sim_thr)
+        print(num_clusters, x_values)
+        plt.plot(x_values, num_clusters, label='DBSCAN eps=%.2f'%sim_thr, marker='o')
+    plt.xlabel('Affinity AL Cycle')
+    plt.ylabel('DBSCAN scaffolds clusters')
+    #plt.title('Scaffold evolution along outer loops')
+    plt.legend()
+    plt.ylim((0, 2000))
+    plt.savefig(outname+'.pdf')
