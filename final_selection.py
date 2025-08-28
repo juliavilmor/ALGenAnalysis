@@ -372,8 +372,8 @@ def get_metrics_generation(resdir, outer_name, inner_name, n, list_inners_per_ou
     print('Number of outers:', outers)
     print('Number of inners:', inners)
     
-    #generated = [7500]*40 + [3500]*140 # this is case dependent!!
-    generated = [5000]*inners 
+    generated = [7500]*40 + [3500]*140 # this is case dependent!!
+    #generated = [5000]*inners 
     print(len(generated))
     print(generated)
 
@@ -385,7 +385,7 @@ def get_metrics_generation(resdir, outer_name, inner_name, n, list_inners_per_ou
         for j in range(1,list_inners_per_outer[i-1]+1):
             print(i,j)
             
-            file = glob.glob('%s/%s%s/%s%s_%s/*_generated_smiles.csv'%(resdir,outer_name,i,inner_name,i,j))[0]
+            file = glob.glob('%s/%s_%s/%s_%s/*_generated_smiles.csv'%(resdir,outer_name,i,inner_name,j))[0]
             smiles = pd.read_csv(file)['smiles'].tolist()
             valid.append(len(smiles))
             
@@ -404,7 +404,7 @@ def get_metrics_generation(resdir, outer_name, inner_name, n, list_inners_per_ou
             mols_db.filterSimilarity(simt=1, alg='Morgan4',verbose=False)
             uniq.append(len(mols_db.dicDB))
             
-            file2 = glob.glob('%s/%s%s/%s%s_%s/*_specific_smiles.csv'%(resdir,outer_name,i,inner_name,i,j))[0]
+            file2 = glob.glob('%s/%s_%s/%s_%s/*_specific_smiles.csv'%(resdir,outer_name,i,inner_name,j))[0]
             specific = pd.read_csv(file2)['smiles'].tolist()
             all_spec_mols = [mol.Mol(smile=x, allparamaters=True) for x in specific]
             specific_mols = []

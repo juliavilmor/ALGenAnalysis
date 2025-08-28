@@ -379,6 +379,31 @@ def get_positives_intersection(results_csv, outdir):
     
     print(f"From {len(df)} molecules, {len(df_pos)} were positives. ({len(df) - len(df_pos)} were removed.)")
 
+def superimpose_histograms_tensordti(list_of_csvs, list_of_labels, insert_title, out, virus, savefig=True, legend_loc='upper right', xlim=None, ylim=None):
+    
+    """final_csvs: list of csv files with the final results. Ordered in descending order."""
+    
+    plt.figure(figsize=(6, 6), dpi=500)
+    total = len(list_of_csvs)
+    colors = mcp.gen_color(cmap="YlGnBu", n=total+1)
+    colors = colors[2:total+1]
+    colors = ['red'] + colors
+    for i, data in enumerate(list_of_csvs):
+        df = pd.read_csv(data)
+        average = mean(df[f'prediction_score_{virus}'].tolist())
+        sns.histplot(data=df, x=df[f'prediction_score_{virus}'].astype(float), color=colors[i], label=list_of_labels[i], element='step', fill=False, bins=70)
+        plt.axvline(average, color=colors[i], linestyle=":")
+    plt.legend(loc=legend_loc, frameon=False)
+    plt.title(insert_title)
+    plt.xlabel("Tensor-DTI prediction score")
+    plt.ylabel("Counts")
+    if xlim:
+        plt.xlim(xlim[0], xlim[1])
+    if ylim:
+        plt.ylim(ylim[0], ylim[1])
+    if savefig:
+        plt.savefig(out)
+
 
 if __name__ == "__main__":
     

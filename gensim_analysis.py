@@ -362,7 +362,9 @@ def plot_specific_set_evolution(results_dir, outdir, outname):
     fig, ax = plt.subplots(figsize=(8,6))
     outers = glob.glob('%s/outer_?'%results_dir)
     outers.sort()
-    outers = outers + ['%s/outer_10'%results_dir]
+    outers2 = glob.glob('%s/outer_??'%results_dir)
+    outers2.sort()
+    outers = outers + outers2
 
     sizes_specific = []
     inner_sizes = []
@@ -374,9 +376,15 @@ def plot_specific_set_evolution(results_dir, outdir, outname):
         inner_sizes.append(inner_size)
     x = list(range(1, len(sizes_specific)+1))
     plt.plot(x, sizes_specific, marker='.', color='blue', label='specific set')
+    
     lines = list(itertools.accumulate(inner_sizes))
     for line in lines:
         plt.axvline(line, color='black', linestyle=':', alpha=0.5)
+        
+    ax.set_yscale('log', base=10)
+    ax.set_ylabel('Specific set size (log scale)')
+    ax.set_xlabel('Outer AL cycle')
+    
     plt.savefig('%s/%s.pdf'%(outdir, outname))
 
 def superpose_specific_set_evolution(results_dir_1, results_dir_2, gscore_values_1, gscore_values_2, outdir, outname):
