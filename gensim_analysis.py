@@ -364,6 +364,7 @@ def plot_specific_set_evolution(results_dir, outdir, outname):
     outers.sort()
     outers2 = glob.glob('%s/outer_??'%results_dir)
     outers2.sort()
+    outers2 = outers2[:-1]
     outers = outers + outers2
 
     sizes_specific = []
