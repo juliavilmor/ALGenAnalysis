@@ -292,7 +292,7 @@ if __name__ == "__main__":
     
     
     # PLOT SUMMARY OF GENERATION
-    
+    """
     df = pd.read_csv('%s/summary_selective_allfilters.csv'%resdir)
     # Transpose the dataframe
     df = df.T
@@ -342,3 +342,49 @@ if __name__ == "__main__":
 
     # Show plot
     plt.savefig('%s/plots/summary_generation.png'%resdir)
+    """
+    
+    # COMPARE MOLECULES BOTH GENERATIONS (REGULAR VS. ABLATED)
+    """
+    regular = '/home/cactus/julia/gensim/selective_allfilters_pretrained/results_filt_8.smi'
+    ablated = '/home/cactus/julia/gensim/selective_nocatalog_pretrained/results_filt_8_catalogues.smi'
+    
+    regular_db = moldb.MolDB(smiDB=regular, verbose=False) # 311 --> 308 unique
+    regular_db.filterSimilarity(simt=1)
+    
+    ablated_db = moldb.MolDB(smiDB=ablated, verbose=False) # 650 --> 647 unique
+    ablated_db.filterSimilarity(simt=1)
+    print(len(regular_db.dicDB), len(ablated_db.dicDB))
+    
+    join = moldb.intersectMolDBs(regular_db, ablated_db, simt=1)
+    print(join.dicDB)
+    
+    
+    plot_UMAP(list_smis=[regular,ablated], list_names=['regular','ablated'],\
+                outdir='%s/plots'%resdir, outname='UMAP_regular_vs_ablated',\
+                sizes=[0.7,0.7], alphas=[0.8,0.8], markers=['o','o'])
+    """
+    
+    # CREATE SDF FILES
+    def convert_results_csv_to_sdf_file(csv_to_convert, outdir):
+
+        filename = os.path.basename(csv_to_convert).replace('.csv','')
+        df = pd.read_csv(csv_to_convert)
+        with Chem.SDWriter('%s/%s.sdf'%(outdir,filename)) as w:
+            for index, row in df.iterrows():
+                m = Chem.MolFromSmiles(row['SMILES_SARS2'])
+
+                m.SetProp('_Name', str(row['id']))
+                m.SetProp('max_tan', str(row['max_tan']))
+                m.SetProp('global_gscore', str(row['global_gscore']))
+                m.SetProp('gscore_SARS2', str(row['gscore_SARS2']))
+                m.SetProp('gscore_SARS', str(row['gscore_SARS']))
+                m.SetProp('gscore_MERS', str(row['gscore_MERS']))
+                w.write(m)
+        
+        print('csv converted to sdf successfully')
+        
+    convert_results_csv_to_sdf_file(csv_to_convert='/home/cactus/julia/gensim/selective_allfilters_pretrained/results_filt_8.csv',\
+                                        outdir='/home/cactus/julia/gensim/selective_allfilters_pretrained/')
+    convert_results_csv_to_sdf_file(csv_to_convert='/home/cactus/julia/gensim/selective_nocatalog_pretrained/results_filt_8_catalogues.csv',\
+                                        outdir='/home/cactus/julia/gensim/selective_nocatalog_pretrained/')

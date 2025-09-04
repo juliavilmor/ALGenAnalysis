@@ -624,7 +624,7 @@ if __name__ == "__main__":
     df = pd.read_csv('%s/metrics_generation_inners.csv'%resdir)
     print(df)
     
-    plt.figure(figsize=(15, 5), dpi=500)
+    plt.figure(figsize=(15, 4), dpi=600)
     plt.plot(df.index, df['Validity'], marker='.', label='Validity')
     plt.plot(df.index, df['Uniqueness'], marker='.', label='Uniqueness')
     plt.plot(df.index, df['Novelty'], marker='.', label='Novelty')
@@ -639,7 +639,7 @@ if __name__ == "__main__":
     plt.ylabel('Percentage (%)')
     plt.legend()
     plt.xticks(np.array(range(0, 190, 10)))
-    plt.savefig('%s/plots/metrics_generation_inners.pdf'%resdir)
+    plt.savefig('%s/plots/metrics_generation_inners_poster.pdf'%resdir)
     """
     
     # CALCULATE MEANS AND STD FOR VALIDITY, UNIQUENESS AND NOVELTY
@@ -659,7 +659,7 @@ if __name__ == "__main__":
     """
     
     # CLUSTER SCAFFOLDS DBSCAN BUT WITH THRESHOLDS APPLIED
-    #"""
+    """
     def cluster_DBSCAN(csv_results,
                    smi_specific,
                    gscore_glob_thr_list,
@@ -734,4 +734,38 @@ if __name__ == "__main__":
                         gscore_ind_thr_list=[-7, -7.1, -7.2, -7.3, -7.4, -7.5, -7.6, -7.7, -7.8, -7.8, -7.8, -7.9, -7.9, -7.9, -7.9],
                         similarity_thrs=[0.7, 0.6, 0.5],
                         outname='%s/plots/cluster_dbscans_selective_extended_thrs'%resdir)
-    #"""
+    """
+    
+    # COMPARISON ALGEN+GLIDE VS. ALGEN+TENSOR-DTI
+    # UMAP
+    glide = '%s/results_filt_8_catalogues.smi'%resdir
+    tensor = '/home/cactus/julia/gensim/comparison_tensordti/results_filtered_SMARTS.smi'
+    initial = '%s/sel_init_spec_set.smi'%resdir
+    smi_list = [initial, glide, tensor]
+    
+    names = ['Initial specific', 'Candidates ALGen+Glide', 'Candidates ALGen+Tensor-DTI']
+    sizes = [0.3, 0.3, 0.3]
+    alphas = [0.9, 0.9, 0.9]
+    markers = ["*", "o", "o"]
+
+    colors = ['red', 'cornflowerblue', 'orange']
+
+    plot_UMAP(list_smis=smi_list, list_names=names, outdir='/home/cactus/julia/gensim/comparison_tensordti', outname='UMAP_glide_tensor',\
+              sizes=sizes, alphas=alphas, markers=markers, colors=colors)
+    
+    # histograms
+    glide = pd.read_csv('%s/results_filt_8_catalogues.csv'%resdir)
+    tensor = pd.read_csv('/home/cactus/julia/gensim/comparison_tensordti/glide_results.csv')
+    initial = pd.read_csv('/home/cactus/julia/gensim/selective/glide0/docking/global_glide_best.csv')
+    dfs = [initial, glide, tensor]
+    
+    plt.figure(figsize=(8,6), dpi=500)
+    sns.histplot(data=initial, x='r_i_docking_score', color='red', label='Initial specific', element='step', fill=False, bins=70)
+    sns.histplot(data=glide, x='global_gscore', color='cornflowerblue', label='ALGen+Glide', element='step', fill=False, bins=70)
+    sns.histplot(data=tensor, x='gscore_global', color='orange', label='ALGen+Tensor-DTI', element='step', fill=False, bins=70)
+    
+    plt.xlabel('Glide docking score')
+    plt.ylabel('Count')
+    plt.legend()
+    plt.savefig('/home/cactus/julia/gensim/comparison_tensordti/hist_glide_tensor.pdf')
+    
