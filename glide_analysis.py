@@ -412,8 +412,9 @@ def get_glide_results_table(list_csvs, outdir):
         virus = csv.split('/')[-1].split('_')[0]
         virus_df = pd.read_csv(csv)
         virus_df = virus_df.rename(columns={'r_i_docking_score':f'gscore_{virus}',
+                                            'SMILES':f'SMILES_{virus}',
                                             'title':'id'})
-        virus_df = virus_df[['id', 'SMILES', f'gscore_{virus}']]
+        virus_df = virus_df[['id', f'SMILES_{virus}', f'gscore_{virus}']]
         dfs.append(virus_df)
         
     res_df = dfs[0]
