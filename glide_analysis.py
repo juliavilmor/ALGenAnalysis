@@ -404,6 +404,28 @@ def superimpose_histograms_tensordti(list_of_csvs, list_of_labels, insert_title,
     if savefig:
         plt.savefig(out)
 
+def get_glide_results_table(list_csvs, outdir):
+    """ The csvs should be the results for each virus."""
+        
+    dfs = []
+    for csv in list_csvs:
+        virus = csv.split('/')[-1].split('_')[0]
+        virus_df = pd.read_csv(csv)
+        virus_df = virus_df.rename(columns={'r_i_docking_score':f'gscore_{virus}',
+                                            'title':'id'})
+        virus_df = virus_df[['id', 'SMILES', f'gscore_{virus}']]
+        dfs.append(virus_df)
+        
+    res_df = dfs[0]
+    for df in dfs[1:]:
+        res_df = res_df.merge(df, on='id', how='outer')
+
+    # Calculate the global results
+    res_df['gscore_global'] = res_df[[f'gscore_{v}' for v in ['SARS2', 'SARS', 'MERS']]].mean(axis=1)
+    
+    # Save the results
+    print(res_df)
+    res_df.to_csv('%s/glide_results.csv'%outdir, index=False)
 
 if __name__ == "__main__":
     
