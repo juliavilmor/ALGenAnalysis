@@ -360,7 +360,7 @@ def filter_tensordti_results(results_csv, global_prediction_threshold, individua
 
     df = pd.read_csv(results_csv)
     df_filtered = df[(df['prediction_score_global'] >= global_prediction_threshold) & (df['prediction_score_SARS2'] >= individual_prediction_threshold) & (df['prediction_score_SARS'] >= individual_prediction_threshold) & (df['prediction_score_MERS'] >= individual_prediction_threshold)]
-    df_filtered = df[(df['confidence_score_global'] <= global_confidence_threshold) & (df['confidence_score_SARS2'] <= individual_confidence_threshold) & (df['confidence_score_SARS'] <= individual_confidence_threshold) & (df['confidence_score_MERS'] <= individual_confidence_threshold)]
+    df_filtered = df_filtered[(df_filtered['confidence_score_global'] <= global_confidence_threshold) & (df_filtered['confidence_score_SARS2'] <= individual_confidence_threshold) & (df_filtered['confidence_score_SARS'] <= individual_confidence_threshold) & (df_filtered['confidence_score_MERS'] <= individual_confidence_threshold)]
     
     print(f"From {len(df)} molecules, {len(df_filtered)} were kept after filtering. ({len(df) - len(df_filtered)} were removed.)")
     
