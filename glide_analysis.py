@@ -201,7 +201,11 @@ def filter_by_glide_docking_score(path_to_best_csv, gscore, outdir):
     for smile in smiles:
         smi_file.write('%s\n'%smile)
     smi_file.close()
-    
+
+    # return the number of filtrated molecules
+    return len(df_filt)
+
+
 def filter_by_glide_gscore_paninhibitors(list_of_csvs, outdir, gscore_global=-6.5, gscore_individual=-5.9):
     list_dfs = []
     for glide in list_of_csvs:
