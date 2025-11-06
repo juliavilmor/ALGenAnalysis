@@ -242,6 +242,9 @@ def filter_by_glide_gscore_paninhibitors(list_of_csvs, outdir, gscore_global=-6.
                 smi_file.write('%s\n'%smiles)
                 smi_file.close()
     print('From %s molecules, %s were removed.\nThe new set contains %s molecules'%(len(ligs), (len(ligs) - len(mean)), len(mean)))
+    
+    # return the number of filtrated molecules
+    return len(mean)
 
 def cumulative_histograms(final_csvs, initial_csvs, list_of_labels, list_of_colors, insert_title, out, savefig=True, legend_loc='upper right', xlim=None, ylim=None):
     
