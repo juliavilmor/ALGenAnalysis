@@ -116,6 +116,7 @@ def get_best_glide_docking_pose(csv_file, to_csv=True):
  
     df = pd.read_csv(csv_file, on_bad_lines='skip')
     df = df[df['SMILES'] != 'invalid_structure']
+    df = df[df['r_i_docking_score'] < 10000]
     idx = df.groupby('title')['r_i_docking_score'].idxmin()
     df_best = df.loc[idx]
     print('The best pose for each compound has been obtained. Total: %s compounds'%len(df_best))
