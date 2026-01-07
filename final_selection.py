@@ -173,6 +173,75 @@ def get_scaffolds_db(molecular_db):
 
 def cluster_DBSCAN(csv_results,
                    smi_specific,
+                   gscore_thr,
+                   tanimoto_thr,
+                   similarity_thr):
+
+    from sklearn.cluster import DBSCAN
+
+    df = pd.read_csv(csv_results)
+    df_filt = df[(df['gscore'] <= gscore_thr) & (df['max_tan'] <= tanimoto_thr)]
+
+    df_filt['outer'] = df_filt['id'].apply(lambda x: x.split('_')[0])
+    df_filt['outer'] = df_filt['outer'].astype(int)
+    total_outers = len(df_filt['outer'].unique())
+
+    num_clusters = []
+    x_values = []
+    all_scaff_mols = []
+
+    for outer in range(total_outers + 1):
+        if outer == 0:
+            specific_db = moldb.MolDB(smiDB=smi_specific)
+            scaffold_db = get_scaffolds_db(specific_db)
+            all_scaff_mols.extend(scaffold_db.mols)
+            scaffold_db._get_similarity_matrix()
+            simmatrix = scaffold_db.simmatrix
+        else:
+            df_outer = df_filt[df_filt['outer'] == outer]
+            smiles = df_outer['SMILES'].tolist()
+            ids = df_outer['id'].tolist()
+            mol_list = [mol.Mol(smile=smile, name=ids[i]) for i, smile in enumerate(smiles)]
+            outer_db = moldb.MolDB(molList=mol_list)
+            scaffold_db = get_scaffolds_db(outer_db)
+            all_scaff_mols.extend(scaffold_db.mols)
+            scaffold_db = moldb.MolDB(molList=all_scaff_mols)
+            scaffold_db._get_similarity_matrix()
+            simmatrix = scaffold_db.simmatrix
+        clustering = DBSCAN(metric="precomputed",
+                            eps=1-similarity_thr,
+                            min_samples=1)
+        clustering.fit(1-simmatrix)
+        counter = Counter(clustering.labels_)
+        num_clusters.append(len(counter.keys()))
+        x_values.append(outer)
+
+    return num_clusters, x_values
+    
+def plot_cluster_DBSCAN(csv_results,
+                    smi_specific,
+                    gscore_thr,
+                    tanimoto_thr,
+                    similarity_thrs,
+                    outname):
+    
+    plt.figure(figsize=(8,6), dpi=200)
+    for sim_thr in similarity_thrs:
+        print(sim_thr)
+        num_clusters, x_values = cluster_DBSCAN(csv_results=csv_results,
+                                                smi_specific=smi_specific,
+                                                gscore_thr=gscore_thr,
+                                                tanimoto_thr=tanimoto_thr,
+                                                similarity_thr=sim_thr)
+        plt.plot(x_values, num_clusters, label='DBSCAN eps=%.2f'%sim_thr, marker='o')
+    plt.xlabel('Outer loop')
+    plt.ylabel('DBSCAN scaffolds clusters')
+    plt.title('Scaffold evolution along outer loops')
+    plt.legend()
+    plt.savefig(outname+'.png')
+
+def cluster_DBSCAN_multitarget(csv_results,
+                   smi_specific,
                    gscore_glob_thr,
                    gscore_ind_thr,
                    tanimoto_thr,
@@ -238,7 +307,7 @@ def cluster_DBSCAN(csv_results,
         #scaffs = [scaff_mols[i] for i in row_indexes]
 
 
-def plot_cluster_DBSCAN(csv_results,
+def plot_cluster_DBSCAN_multitarget(csv_results,
                         smi_specific,
                         gscore_glob_thr,
                         gscore_ind_thr,
@@ -263,7 +332,7 @@ def plot_cluster_DBSCAN(csv_results,
     plt.ylim((0, 2000))
     plt.savefig(outname+'.pdf')
 
-def new_scaffolds(csv_results,
+def new_scaffolds_multitarget(csv_results,
                   smi_specific,
                   gscore_glob_thr,
                   gscore_ind_thr,
@@ -319,7 +388,7 @@ def new_scaffolds(csv_results,
     return percs, x_values
 
 
-def plot_new_scaffolds(csv_results,
+def plot_new_scaffolds_multitarget(csv_results,
                        smi_specific,
                        gscore_glob_thr,
                        gscore_ind_thr,
@@ -372,8 +441,8 @@ def get_metrics_generation(resdir, outer_name, inner_name, n, list_inners_per_ou
     print('Number of outers:', outers)
     print('Number of inners:', inners)
     
-    generated = [7500]*40 + [3500]*140 # this is case dependent!!
-    #generated = [5000]*inners 
+    #generated = [7500]*40 + [3500]*140 # this is case dependent!!
+    generated = [10000]*40 + [10000]*90 
     print(len(generated))
     print(generated)
 
