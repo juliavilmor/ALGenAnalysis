@@ -40,6 +40,7 @@ def create_table_gm_counts(results_dir, outname, save_df=False):
     counts_threshold = {}
     counts_success = {}
     results = glob.glob('%s/%s_*'%(results_dir, outname))
+    print(results)
     for result in results:
         ninner = os.path.basename(result)
         if outname not in ninner: continue
@@ -81,6 +82,8 @@ def create_table_gm_counts(results_dir, outname, save_df=False):
                         counts_success[inner] = rate
 
     # save it into a dataframe
+    print(counts_specific, counts_generated, counts_threshold, counts_success)
+
     try:
         counts_dic = dict([(k,[counts_specific[k],counts_generated[k], counts_threshold[k], counts_success[k]]) for k in counts_specific])
     except:
@@ -298,7 +301,14 @@ def create_specific_set(glide_smi, previous_smi, outdir, outname):
 def plot_UMAP(list_smis, list_names, outdir, outname, sizes, alphas, markers, colors=None):
     """It plots the tSNE of all the sets indicated in the list."""
     total = len(list_smis)
-    mol_list = [moldb.MolDB(smiDB=smi, verbose=False) for smi in list_smis]
+    mol_list = []
+    for smi in list_smis:
+        try:
+            mol = moldb.MolDB(smiDB=smi, verbose=False)
+            mol_list.append(mol)
+        except Exception as e:
+            print(f"Error loading SMILES file '{smi}': {e}")
+    #mol_list = [moldb.MolDB(smiDB=smi, verbose=False) for smi in list_smis]
     if colors:
         colors = colors
     else:
@@ -448,6 +458,45 @@ def superpose_specific_set_evolution(results_dir_1, results_dir_2, gscore_values
     
     plt.legend(loc='lower right')
     plt.savefig('%s/%s.pdf'%(outdir, outname))
+
+def plot_specific_set_evolution_dockingscores(results_dir, gscore_values, outdir, outname):
+        plt.figure()
+        fig, ax = plt.subplots(figsize=(10,6), dpi=300)
+        outers = glob.glob('%s/outer_?'%results_dir_1)
+        outers.sort()
+        outers_ = glob.glob('%s/outer_??'%results_dir_1)
+        outers_.sort()
+        outers = outers + outers_
+        outers = outers[:-1]
+
+        sizes_specific = []
+        inner_sizes = []
+        for i, outer in enumerate(outers):
+            table = pd.read_csv('%s/outer_%s/table_of_counts_trans.csv'%(results_dir, i+1))
+            size_specific = table['specific'].tolist()
+            sizes_specific.extend(size_specific)
+            inner_size = len(table)
+            inner_sizes.append(inner_size)
+        x = list(range(1, len(sizes_specific)+1))
+        plt.plot(x, sizes_specific, marker='.', color='royalblue', label='specific set IL1beta')
+
+        lines = list(itertools.accumulate(inner_sizes))
+
+        for line in lines:
+            plt.axvline(line, color='black', linestyle=':', alpha=0.5)
+
+        ax.set_yscale('log', base=10)
+        ax.set_ylabel('Specific set size (log scale)')
+        ax.set_xlabel('Inner round')
+
+        # Create a secondary y-axis with the gscore values
+        ax2 = ax.twinx()
+        ax2.set_ylabel('Average Docking score threshold')
+        ax2.plot(lines, gscore_values, marker='.', color='cornflowerblue', label='Docking score threshold', linewidth=5, alpha=0.5)
+        ax2.set_ylim(-9, -6)
+
+        plt.legend(loc='lower right')
+        plt.savefig('%s/%s.png'%(outdir, outname))
 
 def tensordti_csv_format(csv, outer):
     """
