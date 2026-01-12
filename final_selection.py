@@ -573,7 +573,7 @@ def plot_QED_generation(resdir, outer_name, inner_name, n, list_inners_per_outer
     for i in range(1,outers+1):
         for j in range(1,list_inners_per_outer[i-1]+1):
             print(i,j)
-            file = glob.glob('%s/%s%s/%s%s_%s/*_generated_smiles.csv'%(resdir,outer_name,i,inner_name,i,j))[0]
+            file = glob.glob('%s/%s_%s/%s_%s/*_generated_smiles.csv'%(resdir,outer_name,i,inner_name,j))[0]
             df = pd.read_csv(file)
             mean_qed = df['QED'].mean()
             mean_qeds.append(mean_qed)
@@ -610,7 +610,7 @@ def plot_SA_generation(resdir, outer_name, inner_name, n, list_inners_per_outer)
     for i in range(1,outers+1):
         for j in range(1,list_inners_per_outer[i-1]+1):
             print(i,j)
-            file = glob.glob('%s/%s%s/%s%s_%s/*_generated_smiles.csv'%(resdir,outer_name,i,inner_name,i,j))[0]
+            file = glob.glob('%s/%s_%s/%s_%s/*_generated_smiles.csv'%(resdir,outer_name,i,inner_name,j))[0]
             df = pd.read_csv(file)
             mean_sa = df['SAscore'].mean()
             mean_sas.append(mean_sa)
@@ -647,7 +647,7 @@ def plot_TA_similarity_generation(resdir, outer_name, inner_name, n, list_inners
     for i in range(1,outers+1):
         for j in range(1,list_inners_per_outer[i-1]+1):
             print(i,j)
-            file = glob.glob('%s/%s%s/%s%s_%s/*_generated_smiles.csv'%(resdir,outer_name,i,inner_name,i,j))[0]
+            file = glob.glob('%s/%s_%s/%s_%s/*_generated_smiles.csv'%(resdir,outer_name,i,inner_name,j))[0]
             df = pd.read_csv(file)
             mean_ta = df['tan_max'].mean()
             mean_tas.append(mean_ta)
@@ -671,6 +671,194 @@ def plot_TA_similarity_generation(resdir, outer_name, inner_name, n, list_inners
     plt.ylim((0, 1))
     plt.savefig('%s/TA_per_inner.pdf'%(resdir))
     
+def plot_MW_generation(resdir, outer_name, inner_name, n, list_inners_per_outer):
+    """It plots the mean molecular weight of the generated molecules per inner loop."""
+    
+    outers = len(list_inners_per_outer)
+    inners = sum(list_inners_per_outer)
+    print('Number of outers:', outers)
+    print('Number of inners:', inners)
+    
+    mean_mws = []
+    std_mws = []
+    for i in range(1,outers+1):
+        for j in range(1,list_inners_per_outer[i-1]+1):
+            print(i,j)
+            file = glob.glob('%s/%s_%s/%s_%s/*_generated_smiles.csv'%(resdir,outer_name,i,inner_name,j))[0]
+            df = pd.read_csv(file)
+            mean_mw = df['mw'].mean()
+            mean_mws.append(mean_mw)
+            std_mw = df['mw'].std()
+            std_mws.append(std_mw)
+            
+    df = pd.DataFrame({'inner': range(1, inners + 1), 'mean_MW': mean_mws, 'std_MW': std_mws})
+    df.to_csv('%s/MW_per_inner.csv'%(resdir), index=False)
+    
+    plt.figure(figsize=(15, 5), dpi=500)
+    plt.errorbar(df['inner'], df['mean_MW'], yerr=df['std_MW'], fmt='.', label='Mean MW', capsize=3, linestyle='-', color='blue', ecolor='lightblue', elinewidth=2, markeredgewidth=2)
+
+    lines = list(itertools.accumulate(list_inners_per_outer))
+    for line in lines:
+        plt.axvline(line, color='black', linestyle=':', alpha=0.5)
+    plt.title('Mean MW of generated molecules')
+    plt.xlabel('Affinity AL cycle')
+    plt.ylabel('Mean MW')
+    plt.legend()
+    plt.xticks(np.array(range(0, sum(list_inners_per_outer), 10)))
+    plt.savefig('%s/MW_per_inner.pdf'%(resdir))
+
+def plot_len_smiles_generation(resdir, outer_name, inner_name, n, list_inners_per_outer):
+    """It plots the mean length of the SMILES of the generated molecules per inner loop."""
+    
+    outers = len(list_inners_per_outer)
+    inners = sum(list_inners_per_outer)
+    print('Number of outers:', outers)
+    print('Number of inners:', inners)
+    
+    mean_lens = []
+    std_lens = []
+    for i in range(1,outers+1):
+        for j in range(1,list_inners_per_outer[i-1]+1):
+            print(i,j)
+            file = glob.glob('%s/%s_%s/%s_%s/*_generated_smiles.csv'%(resdir,outer_name,i,inner_name,j))[0]
+            df = pd.read_csv(file)
+            df['len_smiles'] = df['smiles'].apply(lambda x: len(x))
+            mean_len = df['len_smiles'].mean()
+            mean_lens.append(mean_len)
+            std_len = df['len_smiles'].std()
+            std_lens.append(std_len)
+    
+    df = pd.DataFrame({'inner': range(1, inners + 1), 'mean_len_smiles': mean_lens, 'std_len_smiles': std_lens})
+    df.to_csv('%s/len_smiles_per_inner.csv'%(resdir), index=False)
+    
+    plt.figure(figsize=(15, 5), dpi=500)
+    plt.errorbar(df['inner'], df['mean_len_smiles'], yerr=df['std_len_smiles'], fmt='.', label='Mean length SMILES', capsize=3, linestyle='-', color='blue', ecolor='lightblue', elinewidth=2, markeredgewidth=2)
+    lines = list(itertools.accumulate(list_inners_per_outer))
+    for line in lines:
+        plt.axvline(line, color='black', linestyle=':', alpha=0.5)
+    plt.title('Mean length of SMILES of generated molecules')
+    plt.xlabel('Affinity AL cycle')
+    plt.ylabel('Mean length SMILES')
+    plt.legend()
+    plt.xticks(np.array(range(0, sum(list_inners_per_outer), 10)))
+    plt.savefig('%s/len_smiles_per_inner.pdf'%(resdir))
+
+def is_trifurcated(
+    mol,
+    min_branch_size=3,
+    exclude_rings=True
+    ):
+    """
+    Returns the mol object if it contains a valid trifurcation center,
+    otherwise returns None.
+
+    Parameters
+    ----------
+    mol : RDKit Mol
+        Molecule to analyze.
+    min_branch_size : int
+        Minimum branch size (including branch-start).
+    exclude_rings : bool
+        Whether to ignore trifurcations where the center is in a ring.
+    """
+    # SMARTS pattern for trifurcation (heavy atom connected to 3 branching atoms)
+    TRIFURCATION_SMARTS = "[*;!H0]([$([*])])([$([*])])([$([*])])"
+    TRIFURCATION_PATTERN = Chem.MolFromSmarts(TRIFURCATION_SMARTS)
+
+    if mol is None:
+        return None
+
+    matches = mol.GetSubstructMatches(TRIFURCATION_PATTERN)
+    if not matches:
+        return None
+
+    # DFS helper function to count branch size
+    def count_branch_atoms(mol, start_idx, forbidden):
+        visited = set(forbidden)
+        stack = [start_idx]
+        visited.add(start_idx)
+        count = 0
+
+        while stack:
+            idx = stack.pop()
+            count += 1
+            atom = mol.GetAtomWithIdx(idx)
+            for nbr in atom.GetNeighbors():
+                nidx = nbr.GetIdx()
+                if nidx not in visited:
+                    visited.add(nidx)
+                    stack.append(nidx)
+
+        return count
+
+    # Evaluate each match
+    for match in matches:
+        center_idx = match[0]
+        branch_idxs = match[1:]
+        center_atom = mol.GetAtomWithIdx(center_idx)
+
+        # Skip rings if required
+        if exclude_rings and center_atom.IsInRing():
+            continue
+
+        # Center must have at least 3 heavy neighbors
+        heavy_neighbors = [
+            a for a in center_atom.GetNeighbors()
+            if a.GetAtomicNum() != 1
+        ]
+        if len(heavy_neighbors) < 3:
+            continue
+
+        # Branches must be distinct
+        if len(set(branch_idxs)) != 3:
+            continue
+
+        # Check branches independently
+        valid = True
+        for i, bidx in enumerate(branch_idxs):
+            forbidden = {center_idx} | set(branch_idxs[:i] + branch_idxs[i+1:])
+            size = count_branch_atoms(mol, bidx, forbidden)
+
+            if size < min_branch_size:
+                valid = False
+                break
+
+        if valid:
+            return mol  # It IS trifurcated
+
+    return None  # No valid trifurcation found
+
+def plot_trifurcated_perc_generation(resdir, outer_name, inner_name, n, list_inners_per_outer):
+    """It plots the percentage of trifurcated molecules per inner AL generation."""
+    
+    outers = len(list_inners_per_outer)
+    inners = sum(list_inners_per_outer)
+    print('Number of outers:', outers)
+    print('Number of inners:', inners)
+    
+    percs = []
+    for i in range(1,outers+1):
+        for j in range(1,list_inners_per_outer[i-1]+1):
+            print(i,j)
+            file = glob.glob('%s/%s_%s/%s_%s/*_generated_smiles.csv'%(resdir,outer_name,i,inner_name,j))[0]
+            df = pd.read_csv(file)
+            df['mol'] = df['smiles'].apply(lambda x: Chem.MolFromSmiles(x))
+            df['is_trifurcated'] = df['mol'].apply(lambda x: True if is_trifurcated(x) is not None else False)
+            
+            perc_trifurcated = (len(df[df['is_trifurcated']==True]) / len(df)) * 100
+            percs.append(perc_trifurcated)
+    
+    plt.figure(figsize=(15,5),dpi=500)
+    plt.plot(range(1, inners+1), percs, marker='o', linestyle='-', color='blue')
+    lines = list(itertools.accumulate(list_inners_per_outer))
+    for line in lines:
+        plt.axvline(line, color='black', linestyle=':', alpha=0.5)
+    plt.xlabel('Inner AL Generation')
+    plt.ylabel('Percentage of Trifurcated Molecules (%)')
+    plt.title('Percentage of Trifurcated Molecules per Inner AL Generation')
+    plt.ylim(0,100)
+    plt.savefig('%s/plots/trifurcated_perc_generation.pdf'%(resdir))
+
 def plot_counts_inner_AL_filters(resdir, outer_name, inner_name, n, list_inners_per_outer):
     "It plots the counts of molecules applying the inner AL filters"
     
