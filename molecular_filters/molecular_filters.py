@@ -189,6 +189,90 @@ def filter_manual_SMARTS_pattens(smiles):
             return None
     return Chem.MolToSmiles(mol)
 
+def is_trifurcated(
+    mol,
+    min_branch_size=3,
+    exclude_rings=True
+    ):
+    """
+    Returns the mol object if it contains a valid trifurcation center,
+    otherwise returns None.
+
+    Parameters
+    ----------
+    mol : RDKit Mol
+        Molecule to analyze.
+    min_branch_size : int
+        Minimum branch size (including branch-start).
+    exclude_rings : bool
+        Whether to ignore trifurcations where the center is in a ring.
+    """
+    # SMARTS pattern for trifurcation (heavy atom connected to 3 branching atoms)
+    TRIFURCATION_SMARTS = "[*;!H0]([$([*])])([$([*])])([$([*])])"
+    TRIFURCATION_PATTERN = Chem.MolFromSmarts(TRIFURCATION_SMARTS)
+
+    if mol is None:
+        return None
+
+    matches = mol.GetSubstructMatches(TRIFURCATION_PATTERN)
+    if not matches:
+        return None
+
+    # DFS helper function to count branch size
+    def count_branch_atoms(mol, start_idx, forbidden):
+        visited = set(forbidden)
+        stack = [start_idx]
+        visited.add(start_idx)
+        count = 0
+
+        while stack:
+            idx = stack.pop()
+            count += 1
+            atom = mol.GetAtomWithIdx(idx)
+            for nbr in atom.GetNeighbors():
+                nidx = nbr.GetIdx()
+                if nidx not in visited:
+                    visited.add(nidx)
+                    stack.append(nidx)
+
+        return count
+
+    # Evaluate each match
+    for match in matches:
+        center_idx = match[0]
+        branch_idxs = match[1:]
+        center_atom = mol.GetAtomWithIdx(center_idx)
+
+        # Skip rings if required
+        if exclude_rings and center_atom.IsInRing():
+            continue
+
+        # Center must have at least 3 heavy neighbors
+        heavy_neighbors = [
+            a for a in center_atom.GetNeighbors()
+            if a.GetAtomicNum() != 1
+        ]
+        if len(heavy_neighbors) < 3:
+            continue
+
+        # Branches must be distinct
+        if len(set(branch_idxs)) != 3:
+            continue
+
+        # Check branches independently
+        valid = True
+        for i, bidx in enumerate(branch_idxs):
+            forbidden = {center_idx} | set(branch_idxs[:i] + branch_idxs[i+1:])
+            size = count_branch_atoms(mol, bidx, forbidden)
+
+            if size < min_branch_size:
+                valid = False
+                break
+
+        if valid:
+            return mol  # It IS trifurcated
+
+    return None  # No valid trifurcation found
 
 if __name__ == '__main__':
     
