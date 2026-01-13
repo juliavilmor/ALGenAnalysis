@@ -848,6 +848,9 @@ def plot_trifurcated_perc_generation(resdir, outer_name, inner_name, n, list_inn
             perc_trifurcated = (len(df[df['is_trifurcated']==True]) / len(df)) * 100
             percs.append(perc_trifurcated)
     
+    df = pd.DataFrame({'inner': range(1, inners + 1), 'perc_trifurcated': percs})
+    df.to_csv('%s/trifurcated_perc_generation.csv'%(resdir), index=False)
+    
     plt.figure(figsize=(15,5),dpi=500)
     plt.plot(range(1, inners+1), percs, marker='o', linestyle='-', color='blue')
     lines = list(itertools.accumulate(list_inners_per_outer))
