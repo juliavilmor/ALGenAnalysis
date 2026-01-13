@@ -889,6 +889,113 @@ def plot_counts_inner_AL_filters(resdir, outer_name, inner_name, n, list_inners_
     plt.xticks(np.array(range(0, sum(list_inners_per_outer), 10)))
     plt.savefig('%s/counts_inner_AL_filters.pdf'%(resdir))
     
+def get_summary_generation(
+    resdir,
+    outer_name,
+    inner_name,
+    n,
+    list_inners_per_outer,
+    initial_specific_set,
+    gscore_thr,
+    output_csv="summary_generation.csv"
+):
+    """
+    Generate a summary CSV for generation statistics.
+    """
+
+    outers = len(list_inners_per_outer)
+    inners = sum(list_inners_per_outer)
+    print('Number of outers:', outers)
+    print('Number of inners:', inners)
+    
+    counts_specific = []
+    counts_generated = []
+    counts_inner = []
+    counts_outer = []
+    
+    for i in range(1,outers+1):
+        
+        total_generated = 0
+        for j in range(1,list_inners_per_outer[i-1]+1):
+            generated = f'{resdir}/{outer_name}_{i}/{inner_name}_{j}/{n}_generated_smiles.csv'
+            total_generated += len(pd.read_csv(generated))
+        counts_generated.append(total_generated)
+        
+        inner = f'{resdir}/{outer_name}_{i}/all_generated_molecules_unique.csv'
+        counts_inner.append(len(pd.read_csv(inner)))
+        
+        outer = f'{resdir}/{outer_name}_{i+1}/genai_specific_set.smi'
+        counts_outer.append(len(pd.read_csv(outer, names=['smiles'])))
+        
+        if i == 1:
+            counts_specific.append(len(pd.read_csv(initial_specific_set, names=['smiles'])))
+        else:
+            specific = f'{resdir}/{outer_name}_{i}/specific_outer_{i}.smi'
+            counts_specific.append(len(pd.read_csv(specific, names=['smiles'])))
+            
+    perc_inner = [counts_inner[i]/counts_generated[i]*100 for i in range(outers)]
+    perc_outer = [counts_outer[i]/counts_generated[i]*100 for i in range(outers)]
+    
+    df = pd.DataFrame({'outer': ['outer_'+str(i) for i in range(1,outers+1)],
+                        'specific_set': counts_specific,
+                        'generated': counts_generated,
+                        'inner_al': counts_inner,
+                        'outer_al': counts_outer,
+                        'perc_inner': perc_inner,
+                        'perc_outer': perc_outer,
+                        'docking_s_thr': gscore_thr})
+    
+    print(df)
+    df.to_csv(f'{resdir}/{output_csv}', index=False)
+    
+    # transpose for better visualization
+    df_t = df.transpose()
+    print(df_t)
+    df_t.to_csv(f'{resdir}/summary_generation_transposed.csv', index=True)
+    
+def plot_summary_generation(resdir, summary_csv):
+    """Plot summary of generation: counts and percentage inner and outer AL (per outer)"""
+    
+    df = pd.read_csv(summary_csv)
+    
+    # Create figure and primary axis
+    fig,ax1 = plt.subplots(figsize=(12, 8), dpi=500)
+    
+    # Stacked bar plot
+    bars1 = ax1.bar(df["outer"], df["generated"], label="Generated", color="#A3BBAD")
+    bars2 = ax1.bar(df["outer"], df["inner_al"], label="Chemical AL", color="#357266")
+    bars3 = ax1.bar(df["outer"], df["outer_al"], label="Affinity AL", color="#0E3B43")
+    
+    # Annotate bars with percentages
+    for i in range(len(df)):
+        # Inner Active Learning percentage annotation
+        ax1.text(df["outer"][i], df["inner_al"][i] / 2,
+                f"{df['perc_inner'][i]:.1f}%", ha='center', va='baseline', color="white", fontsize=10)
+
+        # Outer Active Learning percentage annotation
+        ax1.text(df["outer"][i], df["outer_al"][i] / 2,
+                f"{df['perc_outer'][i]:.1f}%", ha='center', va='baseline', color="white", fontsize=10)
+        
+     # Labels for left y-axis
+    ax1.set_xlabel("Affinity AL Cycle")
+    ax1.set_ylabel("Number of Molecules")
+    ax1.set_title("Summary of Generation")
+
+    # Second y-axis for gscore thresholds
+    ax2 = ax1.twinx()
+    ax2.plot(df["outer"], df["docking_s_thr"], label="Threshold", color="red", marker="s", linestyle="dotted")
+    ax2.set_ylim(-10, -6)
+
+    # Labels for right y-axis
+    ax2.set_ylabel("Docking Score Threshold")
+
+    # Legends
+    ax1.legend(loc="upper center")
+    ax2.legend(loc="upper right")
+
+    # Show plot
+    plt.savefig('%s/plots/summary_generation.pdf'%resdir)
+    
 def get_results_csv_from_tensordti(resdir):
     """It gets the results csv from the tensordti output files."""
     
