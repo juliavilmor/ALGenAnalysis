@@ -298,7 +298,7 @@ def create_specific_set(glide_smi, previous_smi, outdir, outname):
     specific = moldb.joinMolDBs([old_smi, new_smi], simt=1)
     specific.saveToSmi('%s/%s.smi'%(outdir, outname))
     
-def plot_UMAP(list_smis, list_names, outdir, outname, sizes, alphas, markers, colors=None):
+def plot_UMAP(list_smis, list_names, outdir, outname, sizes, alphas, markers, colors=None, random_max=50000):
     """It plots the tSNE of all the sets indicated in the list."""
     total = len(list_smis)
     mol_list = []
@@ -332,7 +332,7 @@ def plot_UMAP(list_smis, list_names, outdir, outname, sizes, alphas, markers, co
     for i in range(len(min_dists)):
         for j in range(len(neighbours)):
             plot.plotUMAP(dbs = mol_list, names = list_names, output='%s/%s_md%s_nn%s'%(outdir, outname, min_dists[i], neighbours[j]),\
-                        random_max = 50000, delimiter = None, alg = 'Morgan4', colors = colors, sizes = sizes,  alphas = alphas,\
+                        random_max = random_max, delimiter = None, alg = 'Morgan4', colors = colors, sizes = sizes,  alphas = alphas,\
                         min_dist = min_dists[i], n_neighbors = neighbours[j], n_epochs = 10000, markers = markers, figsize = (9,6), \
                         linewidth = 0)
 
