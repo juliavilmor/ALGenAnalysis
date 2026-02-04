@@ -454,7 +454,7 @@ def get_metrics_generation(resdir, outer_name, inner_name, n, list_inners_per_ou
         for j in range(1,list_inners_per_outer[i-1]+1):
             print(i,j)
             
-            file = glob.glob('%s/%s_%s/%s_%s/*_all_attempts_round_%s.csv'%(resdir,outer_name,i,inner_name,j,j))[0]
+            file = glob.glob('%s/%s_%s/%s_%s/*_generated_smiles_all_attempts_round_%s.csv'%(resdir,outer_name,i,inner_name,j,j))[0]
             df = pd.read_csv(file)
             smiles = df[df['valid']==True]['smiles'].tolist()
             valid.append(len(smiles))
@@ -921,7 +921,7 @@ def get_summary_generation(
         
         total_generated = 0
         for j in range(1,list_inners_per_outer[i-1]+1):
-            generated = f'{resdir}/{outer_name}_{i}/{inner_name}_{j}/{n}_all_attempts_round{j}.csv'
+            generated = f'{resdir}/{outer_name}_{i}/{inner_name}_{j}/{n}_generated_smiles_all_attempts_round_{j}.csv'
             df_gen = pd.read_csv(generated)
             total_generated += len(df_gen[df_gen['valid']==True])
         counts_generated.append(total_generated)
