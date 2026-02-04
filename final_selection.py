@@ -582,7 +582,7 @@ def plot_QED_generation(resdir, outer_name, inner_name, n, list_inners_per_outer
             std_qeds.append(std_qed)
             
     df = pd.DataFrame({'inner': range(1, inners + 1), 'mean_QED': mean_qeds, 'std_QED': std_qeds})
-    df.to_csv('%s/QED_per_inner.csv'%(resdir), index=False)
+    df.to_csv('%s/plots/QED_per_inner.csv'%(resdir), index=False)
     
     plt.figure(figsize=(15, 5), dpi=500)
     plt.errorbar(df['inner'], df['mean_QED'], yerr=df['std_QED'], fmt='.', label='Mean QED', capsize=3, linestyle='-', color='blue', ecolor='lightblue', elinewidth=2, markeredgewidth=2)
@@ -596,7 +596,7 @@ def plot_QED_generation(resdir, outer_name, inner_name, n, list_inners_per_outer
     plt.legend()
     plt.xticks(np.array(range(0, sum(list_inners_per_outer), 10)))
     plt.ylim((0, 1))
-    plt.savefig('%s/QED_per_inner.pdf'%(resdir))
+    plt.savefig('%s/plots/QED_per_inner.pdf'%(resdir))
     
 def plot_SA_generation(resdir, outer_name, inner_name, n, list_inners_per_outer):
     """It plots the mean SA of the generated molecules per inner loop."""
@@ -619,7 +619,7 @@ def plot_SA_generation(resdir, outer_name, inner_name, n, list_inners_per_outer)
             std_sas.append(std_sa)
             
     df = pd.DataFrame({'inner': range(1, inners + 1), 'mean_SA': mean_sas, 'std_SA': std_sas})
-    df.to_csv('%s/SA_per_inner.csv'%(resdir), index=False)
+    df.to_csv('%s/plots/SA_per_inner.csv'%(resdir), index=False)
     
     plt.figure(figsize=(15, 5), dpi=500)
     plt.errorbar(df['inner'], df['mean_SA'], yerr=df['std_SA'], fmt='.', label='Mean SA', capsize=3, linestyle='-', color='blue', ecolor='lightblue', elinewidth=2, markeredgewidth=2)
@@ -633,7 +633,7 @@ def plot_SA_generation(resdir, outer_name, inner_name, n, list_inners_per_outer)
     plt.legend()
     plt.xticks(np.array(range(0, sum(list_inners_per_outer), 10)))
     plt.ylim((0, 10))
-    plt.savefig('%s/SA_per_inner.pdf'%(resdir))
+    plt.savefig('%s/plots/SA_per_inner.pdf'%(resdir))
     
 def plot_TA_similarity_generation(resdir, outer_name, inner_name, n, list_inners_per_outer):
     """It plots the mean TA similarity of the generated molecules per inner loop."""
@@ -656,7 +656,7 @@ def plot_TA_similarity_generation(resdir, outer_name, inner_name, n, list_inners
             std_tas.append(std_ta)
             
     df = pd.DataFrame({'inner': range(1, inners + 1), 'mean_TA': mean_tas, 'std_TA': std_tas})
-    df.to_csv('%s/TA_per_inner.csv'%(resdir), index=False)
+    df.to_csv('%s/plots/TA_per_inner.csv'%(resdir), index=False)
     
     plt.figure(figsize=(15, 5), dpi=500)
     plt.errorbar(df['inner'], df['mean_TA'], yerr=df['std_TA'], fmt='.', label='Mean TA similarity', capsize=3, linestyle='-', color='blue', ecolor='lightblue', elinewidth=2, markeredgewidth=2)
@@ -670,7 +670,7 @@ def plot_TA_similarity_generation(resdir, outer_name, inner_name, n, list_inners
     plt.legend()
     plt.xticks(np.array(range(0, sum(list_inners_per_outer), 10)))
     plt.ylim((0, 1))
-    plt.savefig('%s/TA_per_inner.pdf'%(resdir))
+    plt.savefig('%s/plots/TA_per_inner.pdf'%(resdir))
     
 def plot_MW_generation(resdir, outer_name, inner_name, n, list_inners_per_outer):
     """It plots the mean molecular weight of the generated molecules per inner loop."""
@@ -693,7 +693,7 @@ def plot_MW_generation(resdir, outer_name, inner_name, n, list_inners_per_outer)
             std_mws.append(std_mw)
             
     df = pd.DataFrame({'inner': range(1, inners + 1), 'mean_MW': mean_mws, 'std_MW': std_mws})
-    df.to_csv('%s/MW_per_inner.csv'%(resdir), index=False)
+    df.to_csv('%s/plots/MW_per_inner.csv'%(resdir), index=False)
     
     plt.figure(figsize=(15, 5), dpi=500)
     plt.errorbar(df['inner'], df['mean_MW'], yerr=df['std_MW'], fmt='.', label='Mean MW', capsize=3, linestyle='-', color='blue', ecolor='lightblue', elinewidth=2, markeredgewidth=2)
@@ -706,7 +706,7 @@ def plot_MW_generation(resdir, outer_name, inner_name, n, list_inners_per_outer)
     plt.ylabel('Mean MW')
     plt.legend()
     plt.xticks(np.array(range(0, sum(list_inners_per_outer), 10)))
-    plt.savefig('%s/MW_per_inner.pdf'%(resdir))
+    plt.savefig('%s/plots/MW_per_inner.pdf'%(resdir))
 
 def plot_len_smiles_generation(resdir, outer_name, inner_name, n, list_inners_per_outer):
     """It plots the mean length of the SMILES of the generated molecules per inner loop."""
@@ -730,7 +730,7 @@ def plot_len_smiles_generation(resdir, outer_name, inner_name, n, list_inners_pe
             std_lens.append(std_len)
     
     df = pd.DataFrame({'inner': range(1, inners + 1), 'mean_len_smiles': mean_lens, 'std_len_smiles': std_lens})
-    df.to_csv('%s/len_smiles_per_inner.csv'%(resdir), index=False)
+    df.to_csv('%s/plots/len_smiles_per_inner.csv'%(resdir), index=False)
     
     plt.figure(figsize=(15, 5), dpi=500)
     plt.errorbar(df['inner'], df['mean_len_smiles'], yerr=df['std_len_smiles'], fmt='.', label='Mean length SMILES', capsize=3, linestyle='-', color='blue', ecolor='lightblue', elinewidth=2, markeredgewidth=2)
@@ -742,7 +742,7 @@ def plot_len_smiles_generation(resdir, outer_name, inner_name, n, list_inners_pe
     plt.ylabel('Mean length SMILES')
     plt.legend()
     plt.xticks(np.array(range(0, sum(list_inners_per_outer), 10)))
-    plt.savefig('%s/len_smiles_per_inner.pdf'%(resdir))
+    plt.savefig('%s/plots/len_smiles_per_inner.pdf'%(resdir))
 
 def is_trifurcated(
     mol,
@@ -850,7 +850,7 @@ def plot_trifurcated_perc_generation(resdir, outer_name, inner_name, n, list_inn
             percs.append(perc_trifurcated)
     
     df = pd.DataFrame({'inner': range(1, inners + 1), 'perc_trifurcated': percs})
-    df.to_csv('%s/trifurcated_perc_generation.csv'%(resdir), index=False)
+    df.to_csv('%s/plots/trifurcated_perc_generation.csv'%(resdir), index=False)
     
     plt.figure(figsize=(15,5),dpi=500)
     plt.plot(range(1, inners+1), percs, marker='o', linestyle='-', color='blue')
@@ -891,7 +891,7 @@ def plot_counts_inner_AL_filters(resdir, outer_name, inner_name, n, list_inners_
     plt.ylabel('Counts')
     plt.legend()
     plt.xticks(np.array(range(0, sum(list_inners_per_outer), 10)))
-    plt.savefig('%s/counts_inner_AL_filters.pdf'%(resdir))
+    plt.savefig('%s/plots/counts_inner_AL_filters.pdf'%(resdir))
     
 def get_summary_generation(
     resdir,
