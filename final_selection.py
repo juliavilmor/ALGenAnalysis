@@ -1095,3 +1095,17 @@ def plot_cluster_DBSCAN_tensordti(csv_results,
     plt.legend()
     plt.ylim((0, 2000))
     plt.savefig(outname+'.pdf')
+
+def compute_molecular_parameters_generated(results_csv):
+    """It computes all molecular parameters of the generated molecules and saves them in a csv file."""
+    
+    df = pd.read_csv(results_csv)
+    df['mol'] = df['SMILES'].apply(lambda x: Chem.MolFromSmiles(x))
+    df['QED'] = df['mol'].apply(lambda x: QED.weights_max(x) if x is not None else None)
+    df['SA'] = df['mol'].apply(lambda x: sascorer.calculateScore(x) if x is not None else None)
+    df['MW'] = df['mol'].apply(lambda x: rdMolDescriptors.CalcExactMolWt(x) if x is not None else None)
+    df['len_smiles'] = df['SMILES'].apply(lambda x: len(x))
+    # max_tan and gscore is already in the csv
+    
+    df = df[['id', 'SMILES', 'gscore', 'max_tan', 'QED', 'SA', 'MW', 'len_smiles']]
+    df.to_csv(results_csv.replace('results.csv', 'results_molecular_properties.csv'), index=False)
