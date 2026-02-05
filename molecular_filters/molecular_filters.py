@@ -2,8 +2,6 @@ from rdkit import Chem
 from rdkit.Chem.SaltRemover import SaltRemover
 from rdkit.Chem.MolStandardize import rdMolStandardize
 from rdkit.Chem.FilterCatalog import FilterCatalog, FilterCatalogParams
-from chembl_structure_pipeline import standardizer
-import useful_rdkit_utils as uru
 from rdkit.Chem.Draw import MolsToGridImage
 import pandas as pd
 from collections import Counter
@@ -20,79 +18,19 @@ def smiles_cleaning(smiles):
     except:
         print('Error on molecule with SMILES:', smiles)
         return None
-
-def filter_PAINS(smiles):
-    mol = Chem.MolFromSmiles(smiles)
-    params_pains = FilterCatalogParams()
-    params_pains.AddCatalog(FilterCatalogParams.FilterCatalogs.PAINS)
-    catalog_pains = FilterCatalog(params_pains)
-    flag = catalog_pains.HasMatch(mol) # Check if there is a matching PAINS
-    if flag:
-        description = [entry.GetDescription() for entry in catalog_pains.GetMatches(mol)]
-        print('PAINS found on molecule with SMILES:', smiles, ' --> ', description)
-        return None
-    else:
-        return Chem.MolToSmiles(mol)
-
-def filter_Brenk(smiles):
-    mol = Chem.MolFromSmiles(smiles)
-    params_unwanted = FilterCatalogParams()
-    params_unwanted.AddCatalog(FilterCatalogParams.FilterCatalogs.BRENK)
-    catalog_unwanted = FilterCatalog(params_unwanted)
-    flag = catalog_unwanted.HasMatch(mol) # Check if there is a matching unwanted substructure
-    if flag:
-        description = [entry.GetDescription() for entry in catalog_unwanted.GetMatches(mol)]
-        print('Brenk found on molecule with SMILES:', smiles, ' --> ', description)
-        return None
-    else:
-        return Chem.MolToSmiles(mol)
     
-def filter_NIH(smiles):
-    mol = Chem.MolFromSmiles(smiles)
-    params_nih = FilterCatalogParams()
-    params_nih.AddCatalog(FilterCatalogParams.FilterCatalogs.NIH)
-    catalog_nih = FilterCatalog(params_nih)
-    flag = catalog_nih.HasMatch(mol) # Check if there is a matching NIH
-    if flag:
-        description = [entry.GetDescription() for entry in catalog_nih.GetMatches(mol)]
-        print('NIH found on molecule with SMILES:', smiles, ' --> ', description)
-        return None
-    else:
-        return Chem.MolToSmiles(mol)
-    
-def filter_REOS(smiles):
-    """Adds Pat Walter's Chembl Filters.
-        The filters are based on the REOS (Rapid Elimination Of Swill).
-        The Catalog CHEMBL contains all these filters:
-        CHEMBL = CHEMBL_Glaxo | CHEMBL_Dundee | CHEMBL_BMS | CHEMBL_SureChEMBL |
-        CHEMBL_MLSMR | CHEMBL_Inpharmatica | CHEMBL_LINT"""
-        
-    mol = Chem.MolFromSmiles(smiles)
-    params_reos = FilterCatalogParams()
-    params_reos.AddCatalog(FilterCatalogParams.FilterCatalogs.CHEMBL)
-    catalog_reos = FilterCatalog(params_reos)
-    flag = catalog_reos.HasMatch(mol) # Check if there is a matching REOS
-    if flag:
-        description = [entry.GetDescription() for entry in catalog_reos.GetMatches(mol)]
-        print('REOS found on molecule with SMILES:', smiles, ' --> ', description)
-        return None
-    else:
-        return Chem.MolToSmiles(mol)
-    
-def filter_rings_8_atoms(smiles):
+def filter_rings_8_atoms(mol):
     """Filter the molecules that have rings with 8 or more atoms"""
-    mol = Chem.MolFromSmiles(smiles)
-    if mol is None: return None
     rings = mol.GetRingInfo().AtomRings()
+    #print(mol.GetRingInfo().NumRings())
     for ring in rings:        
         if len(ring) >= 8:
-            print('Ring with 8 or more atoms found on molecule with SMILES:', smiles)
+            print('Ring with 8 or more atoms found on molecule with SMILES:', Chem.MolToSmiles(mol))
             return None
-    return Chem.MolToSmiles(mol)
-    
-def filter_3_more_fused_rings(smiles):
+    return mol
+
+def filter_3_more_fused_rings(mol):
     """Filter the molecules that have 3 or more fused rings"""
-    mol = Chem.MolFromSmiles(smiles)
     rings = mol.GetRingInfo().AtomRings()
     # Flatten the list and count occurrences, then get items with count > 1
     fused_rings_idxs =  [idx for idx, count in Counter([i for t in rings for i in t]).items() if count > 1]
@@ -108,16 +46,107 @@ def filter_3_more_fused_rings(smiles):
         intersected_rings_idxs = [i for t in intersected_rings for i in t]
         unique = set(intersected_rings_idxs)
         if len(unique) < len(intersected_rings_idxs):
-            print('3 or more fused rings found on molecule with SMILES:', smiles)
+            print('3 or more fused rings found on molecule with SMILES:', Chem.MolToSmiles(mol))
             return None
         else:
-            return Chem.MolToSmiles(mol)
+            return mol
     else:
-        return Chem.MolToSmiles(mol)  
+        return mol
 
-def filter_3_4_rings_fused(smiles):
+def filter_3_more_fused_or_partitioned_rings(mol):
+    """
+    Keep the molecule (return mol) unless any fused ring system
+    has 3 or more independent cycles (true tricyclic or higher).
+    This function removes composite/perimeter rings before analysis.
+    """
+    from itertools import combinations
+
+    ring_info = mol.GetRingInfo()
+    raw_rings = [set(r) for r in ring_info.AtomRings()]
+    if not raw_rings:
+        return mol
+
+    # --- 1) Remove composite/perimeter rings that are exactly the union of two smaller rings
+    rings = list(raw_rings)
+    is_composite = [False] * len(rings)
+    for r_idx, R in enumerate(rings):
+        for a_idx, b_idx in combinations(range(len(rings)), 2):
+            if a_idx == r_idx or b_idx == r_idx:
+                continue
+            A = rings[a_idx]
+            B = rings[b_idx]
+            # only consider strictly-smaller contributors
+            if len(A) >= len(R) or len(B) >= len(R):
+                continue
+            if len(A & B) >= 2 and (A | B) == R:
+                is_composite[r_idx] = True
+                break
+    filtered_rings = [rings[i] for i in range(len(rings)) if not is_composite[i]]
+    if not filtered_rings:
+        filtered_rings = rings  # fallback
+
+    # --- 2) Build fused ring adjacency (rings fused if they share >=2 atoms)
+    fused_graph = {i: set() for i in range(len(filtered_rings))}
+    for i, r1 in enumerate(filtered_rings):
+        for j, r2 in enumerate(filtered_rings):
+            if i < j and len(r1 & r2) > 1:
+                fused_graph[i].add(j)
+                fused_graph[j].add(i)
+
+    # --- 3) Find connected components of the fused-ring graph
+    visited = set()
+    components = []
+    for i in fused_graph:
+        if i not in visited:
+            stack = [i]
+            comp = set()
+            while stack:
+                n = stack.pop()
+                if n not in visited:
+                    visited.add(n)
+                    comp.add(n)
+                    stack.extend(fused_graph[n])
+            components.append(comp)
+
+    # --- 4) For each fused component compute the cycle rank (true independent cycles)
+    # If any component has cycle_rank >= 3, reject molecule.
+    for comp in components:
+        union_atoms = set().union(*[filtered_rings[i] for i in comp])
+
+        # Count edges in the induced subgraph over union_atoms
+        edges = set()
+        for bond in mol.GetBonds():
+            a = bond.GetBeginAtomIdx(); b = bond.GetEndAtomIdx()
+            if a in union_atoms and b in union_atoms:
+                edges.add(tuple(sorted((a, b))))
+        V = len(union_atoms)
+        E = len(edges)
+
+        # compute connected components count C of the induced subgraph (usually 1)
+        adj = {a: set() for a in union_atoms}
+        for a, b in edges:
+            adj[a].add(b); adj[b].add(a)
+        visited_atoms = set()
+        C = 0
+        for node in adj:
+            if node not in visited_atoms:
+                C += 1
+                stack = [node]
+                while stack:
+                    n = stack.pop()
+                    if n not in visited_atoms:
+                        visited_atoms.add(n)
+                        stack.extend(adj[n] - visited_atoms)
+
+        cycle_rank = E - V + C
+        if cycle_rank >= 3:
+            return None
+
+    # If we got here, no fused component has >=3 independent cycles -> keep
+    return mol
+
+def filter_3_4_rings_fused(mol):
     """Filter the molecules that have 3 or 4-atom rings fused with other rings"""
-    mol = Chem.MolFromSmiles(smiles)
     rings = mol.GetRingInfo().AtomRings()
     for ring in rings:
         if len(ring) == 3 or len(ring) == 4:
@@ -125,69 +154,120 @@ def filter_3_4_rings_fused(smiles):
             other_rings = set([i for t in other_rings for i in t])
             fused_rings_idxs = set(ring).intersection(other_rings)
             if len(fused_rings_idxs) > 1:
-                print('Fused 3-4-atom rings found on molecule with SMILES:', smiles)
+                print('Fused 3-4-atom rings found on molecule with SMILES:', Chem.MolToSmiles(mol))
                 return None
-    return Chem.MolToSmiles(mol)
+    return mol
 
-def filter_4_ring_with_substitutions(smiles):
+def filter_4_ring_with_substitutions(mol):
     """Filter the molecules that have 4-atom rings with more than 2 substitutions"""
-    mol = Chem.MolFromSmiles(smiles)
+    if not mol: return None
     rings = mol.GetRingInfo().AtomRings()
     for ring in rings:
         if len(ring) == 4:
             atoms = [mol.GetAtomWithIdx(i) for i in ring]
             bonds = [len(atom.GetNeighbors()) for atom in atoms]
             if sum([1 for b in bonds if b > 2]) > 2:
-                print('4-atom ring with more than 2 substitutions found on molecule with SMILES:', smiles)
+                print('4-atom ring with more than 2 substitutions found on molecule with SMILES:', Chem.MolToSmiles(mol))
                 return None
-    return Chem.MolToSmiles(mol)
-            
-def filter_more_than_2_7rings(smiles):
+    return mol
+
+def filter_more_than_2_7rings(mol):
     """Filter the molecules that have 2 or more 7-membered rings"""
-    mol = Chem.MolFromSmiles(smiles)
     rings = mol.GetRingInfo().AtomRings()
     count = 0
     for ring in rings:
         if len(ring) >= 7:
             count += 1
     if count >= 2:
+        print('2 or more 7-membered rings found on molecules with SMILES:', Chem.MolToSmiles(mol))
         return None
-    return Chem.MolToSmiles(mol)
+    return mol
 
-def filter_consecutive_nitrogens_ring(smiles):
+def filter_consecutive_nitrogens_ring(mol):
     """Filter the molecules that have consecutive nitrogens in a ring"""
-    mol = Chem.MolFromSmiles(smiles)
     rings = mol.GetRingInfo().AtomRings()
     for ring in rings:
         atoms = [mol.GetAtomWithIdx(i).GetSymbol() for i in ring]
         if 'N' not in atoms: continue
         for i in range(len(ring)-1):
             if mol.GetAtomWithIdx(ring[i]).GetAtomicNum() == 7 and mol.GetAtomWithIdx(ring[i+1]).GetAtomicNum() == 7:
-                print('Consecutive nitrogens in a ring found on molecule with SMILES:', smiles)
+                print('Consecutive nitrogens in a ring found on molecule with SMILES:', Chem.MolToSmiles(mol))
                 return None
         if mol.GetAtomWithIdx(ring[0]).GetAtomicNum() == 7 and mol.GetAtomWithIdx(ring[-1]).GetAtomicNum() == 7:
-            print('Consecutive oxygens in a ring found on molecule with SMILES:', smiles)
+            print('Consecutive nitrogens in a ring found on molecule with SMILES:', Chem.MolToSmiles(mol))
             return None
-    return Chem.MolToSmiles(mol)    
-    
-def filter_more_than_4_chiral_centers(smiles):
+    return mol
+
+def filter_more_than_4_chiral_centers(mol):
     """Filter the molecules that have more than 4 chiral centers"""
-    mol = Chem.MolFromSmiles(smiles)
     chiral = Chem.FindMolChiralCenters(mol)
     if len(chiral) > 4:
-        print('More than 4 chiral centers found on molecule with SMILES:', smiles)
+        print('More than 4 chiral centers found on molecule with SMILES:', Chem.MolToSmiles(mol))
         return None
-    return Chem.MolToSmiles(mol)
+    return mol
 
-def filter_manual_SMARTS_pattens(smiles):
+def filter_manual_SMARTS_pattens(mol):
     """Filter the molecules that have manual SMARTS patterns"""
     patterns = ['[C-]']
-    mol = Chem.MolFromSmiles(smiles)
     for pattern in patterns:
         if mol.HasSubstructMatch(Chem.MolFromSmarts(pattern)):
-            print('Manual SMARTS pattern found on molecule with SMILES:', smiles, ' --> ', pattern)
+            print('Manual SMARTS pattern found on molecule with SMILES:', Chem.MolToSmiles(mol), ' --> ', pattern)
             return None
-    return Chem.MolToSmiles(mol)
+    return mol
+
+def filter_PAINS(mol):
+    params_pains = FilterCatalogParams()
+    params_pains.AddCatalog(FilterCatalogParams.FilterCatalogs.PAINS)
+    catalog_pains = FilterCatalog(params_pains)
+    flag = catalog_pains.HasMatch(mol) # Check if there is a matching PAINS
+    if flag:
+        description = [entry.GetDescription() for entry in catalog_pains.GetMatches(mol)]
+        print('PAINS found on molecule with SMILES:', Chem.MolToSmiles(mol), ' --> ', description)
+        return None
+    else:
+        return mol
+
+def filter_Brenk(mol):
+    params_unwanted = FilterCatalogParams()
+    params_unwanted.AddCatalog(FilterCatalogParams.FilterCatalogs.BRENK)
+    catalog_unwanted = FilterCatalog(params_unwanted)
+    flag = catalog_unwanted.HasMatch(mol) # Check if there is a matching unwanted substructure
+    if flag:
+        description = [entry.GetDescription() for entry in catalog_unwanted.GetMatches(mol)]
+        print('Brenk found on molecule with SMILES:', Chem.MolToSmiles(mol), ' --> ', description)
+        return None
+    else:
+        return mol
+
+def filter_NIH(mol):
+    params_nih = FilterCatalogParams()
+    params_nih.AddCatalog(FilterCatalogParams.FilterCatalogs.NIH)
+    catalog_nih = FilterCatalog(params_nih)
+    flag = catalog_nih.HasMatch(mol) # Check if there is a matching NIH
+    if flag:
+        description = [entry.GetDescription() for entry in catalog_nih.GetMatches(mol)]
+        print('NIH found on molecule with SMILES:', Chem.MolToSmiles(mol), ' --> ', description)
+        return None
+    else:
+        return mol
+    
+def filter_REOS(mol):
+    """Adds Pat Walter's Chembl Filters.
+        The filters are based on the REOS (Rapid Elimination Of Swill).
+        The Catalog CHEMBL contains all these filters:
+        CHEMBL = CHEMBL_Glaxo | CHEMBL_Dundee | CHEMBL_BMS | CHEMBL_SureChEMBL |
+        CHEMBL_MLSMR | CHEMBL_Inpharmatica | CHEMBL_LINT"""
+        
+    params_reos = FilterCatalogParams()
+    params_reos.AddCatalog(FilterCatalogParams.FilterCatalogs.CHEMBL)
+    catalog_reos = FilterCatalog(params_reos)
+    flag = catalog_reos.HasMatch(mol) # Check if there is a matching REOS
+    if flag:
+        description = [entry.GetDescription() for entry in catalog_reos.GetMatches(mol)]
+        print('REOS found on molecule with SMILES:', Chem.MolToSmiles(mol), ' --> ', description)
+        return None
+    else:
+        return mol
 
 def is_trifurcated(
     mol,
@@ -273,6 +353,56 @@ def is_trifurcated(
             return mol  # It IS trifurcated
 
     return None  # No valid trifurcation found
+
+def apply_structural_filters(df):
+    """Apply structural filters of unwanted ring substructures"""
+
+    df.dropna(subset=['mols'], inplace=True)  
+    df['mols'] = df['mols'].apply(filter_rings_8_atoms)
+    df.dropna(subset=['mols'], inplace=True)
+    df['mols'] = df['mols'].apply(filter_3_more_fused_or_partitioned_rings)
+    df.dropna(subset=['mols'], inplace=True)
+    df['mols'] = df['mols'].apply(filter_3_4_rings_fused)
+    df.dropna(subset=['mols'], inplace=True)
+    df['mols'] = df['mols'].apply(filter_4_ring_with_substitutions)
+    df.dropna(subset=['mols'], inplace=True)
+    df['mols'] = df['mols'].apply(filter_more_than_2_7rings)
+    df.dropna(subset=['mols'], inplace=True)
+    df['mols'] = df['mols'].apply(filter_consecutive_nitrogens_ring)
+    df.dropna(subset=['mols'], inplace=True)
+    df['mols'] = df['mols'].apply(filter_more_than_4_chiral_centers)
+    df.dropna(subset=['mols'], inplace=True)
+    df['mols'] = df['mols'].apply(filter_manual_SMARTS_pattens)
+    df.dropna(subset=['mols'], inplace=True)
+    
+    return df
+
+def apply_unwanted_substruct_filters(df):
+    """Apply structural filters of PAINS, Brenk, and NIH"""
+
+    df['mols'] = df['smiles'].apply(lambda smile: Chem.MolFromSmiles(smile) if pd.notna(smile) else None)
+    df.dropna(subset=['mols'], inplace=True)
+    df['mols'] = df['mols'].apply(filter_PAINS)
+    df.dropna(subset=['mols'], inplace=True)
+    df['mols'] = df['mols'].apply(filter_Brenk)
+    df.dropna(subset=['mols'], inplace=True)
+    df['mols'] = df['mols'].apply(filter_NIH)
+    df.dropna(subset=['mols'], inplace=True)
+    df['mols'] = df['mols'].apply(filter_REOS)
+    df.dropna(subset=['mols'], inplace=True)
+
+    return df
+
+def apply_trifurcated_filter(df, min_branch_size=3, exclude_rings=True):
+    """Apply trifurcated center filter"""
+
+    df['mols'] = df['smiles'].apply(lambda smile: Chem.MolFromSmiles(smile) if pd.notna(smile) else None)
+    df.dropna(subset=['mols'], inplace=True)
+    df['mols'] = df['mols'].apply(lambda mol: is_trifurcated(mol, min_branch_size, exclude_rings))
+    df.dropna(subset=['mols'], inplace=True)
+
+    return df
+
 
 if __name__ == '__main__':
     
