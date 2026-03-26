@@ -14,7 +14,8 @@ from rdkit import DataStructs
 from collections import Counter
 from statistics import mean
 import itertools
-
+import sascorer
+from rdkit.Chem import QED, rdMolDescriptors
 
 def create_df_gscore_vs_tanimoto(files_dir, specific_set, virus='global', target='glide'):
     """It creates a dataframe of the gscore vs. tanimoto for each molecule in the specific set."""
@@ -226,6 +227,8 @@ def plot_cluster_DBSCAN(csv_results,
                     outname):
     
     plt.figure(figsize=(8,6), dpi=200)
+    clustering_data = []  # To store data for the CSV file
+    
     for sim_thr in similarity_thrs:
         print(sim_thr)
         num_clusters, x_values = cluster_DBSCAN(csv_results=csv_results,
@@ -234,11 +237,22 @@ def plot_cluster_DBSCAN(csv_results,
                                                 tanimoto_thr=tanimoto_thr,
                                                 similarity_thr=sim_thr)
         plt.plot(x_values, num_clusters, label='DBSCAN eps=%.2f'%sim_thr, marker='o')
+        
+        # Append data for CSV
+        for x, num in zip(x_values, num_clusters):
+            clustering_data.append({'Similarity Threshold': sim_thr, 
+                                    'Outer Loop': x, 
+                                    'Num Clusters': num})
+    # Save the plot
     plt.xlabel('Outer loop')
     plt.ylabel('DBSCAN scaffolds clusters')
     plt.title('Scaffold evolution along outer loops')
     plt.legend()
     plt.savefig(outname+'.png')
+    
+    # Save the clustering data to a CSV file
+    clustering_df = pd.DataFrame(clustering_data)
+    clustering_df.to_csv(outname+'_clustering_data.csv', index=False)
 
 def cluster_DBSCAN_multitarget(csv_results,
                    smi_specific,
@@ -425,7 +439,7 @@ def map_ids_filtered_PAINS_ADMET_mols(csv_results, pains_admet_csv, outname):
     df_map.to_csv(outname, index=False)
     
     
-def get_metrics_generation(resdir, outer_name, inner_name, n, list_inners_per_outer):
+def get_metrics_generation(resdir, outer_name, inner_name, n, list_inners_per_outer, generated):
     """Get the metrics of the whole generation:
         Ngen = number of molecules to generate.\
         Nval = number of valid molecules.\
@@ -440,11 +454,7 @@ def get_metrics_generation(resdir, outer_name, inner_name, n, list_inners_per_ou
     inners = sum(list_inners_per_outer)
     print('Number of outers:', outers)
     print('Number of inners:', inners)
-    
-    #generated = [7500]*40 + [3500]*140 # this is case dependent!!
-    generated = [10000]*40 + [10000]*90 
-    print(len(generated))
-    print(generated)
+    print('Number of generated molecules:', generated)
 
     valid = []
     uniq = []
@@ -964,7 +974,7 @@ def plot_summary_generation(resdir, summary_csv):
     df = pd.read_csv(summary_csv)
     
     # Create figure and primary axis
-    fig,ax1 = plt.subplots(figsize=(12, 8), dpi=500)
+    fig,ax1 = plt.subplots(figsize=(20, 8), dpi=600)
     
     # Stacked bar plot
     bars1 = ax1.bar(df["outer"], df["generated"], label="Generated", color="#A3BBAD")
@@ -995,8 +1005,8 @@ def plot_summary_generation(resdir, summary_csv):
     ax2.set_ylabel("Docking Score Threshold")
 
     # Legends
-    ax1.legend(loc="upper center")
-    ax2.legend(loc="upper right")
+    ax1.legend(loc="upper right")
+    ax2.legend(loc="right")
 
     # Show plot
     plt.savefig('%s/plots/summary_generation.pdf'%resdir)

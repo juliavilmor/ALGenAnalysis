@@ -461,7 +461,7 @@ def superpose_specific_set_evolution(results_dir_1, results_dir_2, gscore_values
 
 def plot_specific_set_evolution_dockingscores(results_dir, gscore_values, outdir, outname):
         plt.figure()
-        fig, ax = plt.subplots(figsize=(10,6), dpi=300)
+        fig, ax = plt.subplots(figsize=(20,6), dpi=300)
         outers = glob.glob('%s/outer_?'%results_dir)
         outers.sort()
         outers_ = glob.glob('%s/outer_??'%results_dir)
