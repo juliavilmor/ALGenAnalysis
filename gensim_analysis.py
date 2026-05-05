@@ -459,7 +459,7 @@ def superpose_specific_set_evolution(results_dir_1, results_dir_2, gscore_values
     plt.legend(loc='lower right')
     plt.savefig('%s/%s.pdf'%(outdir, outname))
 
-def plot_specific_set_evolution_dockingscores(results_dir, gscore_values, outdir, outname):
+def plot_specific_set_evolution_dockingscores(results_dir, gscore_values, outdir, outname, ylims=(-9, -6)):
         plt.figure()
         fig, ax = plt.subplots(figsize=(20,6), dpi=300)
         outers = glob.glob('%s/outer_?'%results_dir)
@@ -493,7 +493,7 @@ def plot_specific_set_evolution_dockingscores(results_dir, gscore_values, outdir
         ax2 = ax.twinx()
         ax2.set_ylabel('Average Docking score threshold')
         ax2.plot(lines, gscore_values, marker='.', color='cornflowerblue', label='Docking score threshold', linewidth=5, alpha=0.5)
-        ax2.set_ylim(-9, -6)
+        ax2.set_ylim(ylims)
 
         plt.legend(loc='lower right')
         plt.savefig('%s/%s.png'%(outdir, outname))
