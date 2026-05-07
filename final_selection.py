@@ -469,7 +469,12 @@ def get_metrics_generation(resdir, outer_name, inner_name, n, list_inners_per_ou
             smiles = df[df['valid']==True]['smiles'].tolist()
             valid.append(len(smiles))
             
-            all_mols = [mol.Mol(smile=x, allparamaters=True) for x in smiles]
+            all_mols = []
+            for x in smiles:
+                try:
+                    all_mols.append(mol.Mol(smile=x, allparamaters=True))
+                except Exception as e:
+                    print(f'Error processing smile {x}: {e}')
             mols = []
             for mol1 in all_mols:
                 print(mol1)
