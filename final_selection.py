@@ -254,6 +254,85 @@ def plot_cluster_DBSCAN(csv_results,
     clustering_df = pd.DataFrame(clustering_data)
     clustering_df.to_csv(outname+'_clustering_data.csv', index=False)
 
+def cluster_DBSCAN_variable_gscore_thresholds(csv_results,
+                                              smi_specific,
+                                              gscore_thr_list,
+                                              similarity_thr):
+    from sklearn.cluster import DBSCAN
+    
+    df = pd.read_csv(csv_results)
+    
+    df['outer'] = df['id'].apply(lambda x: x.split('_')[0])
+    df['outer'] = df['outer'].astype(int)
+    total_outers = len(df['outer'].unique())
+    
+    num_clusters = []
+    x_values = []
+    all_scaff_mols = []
+    
+    for outer in range(total_outers + 1):
+        if outer == 0:
+            specific_db = moldb.MolDB(smiDB=smi_specific)
+            scaffold_db = get_scaffolds_db(specific_db)
+            all_scaff_mols.extend(scaffold_db.mols)
+            scaffold_db._get_similarity_matrix()
+            simmatrix = scaffold_db.simmatrix
+        else:
+            df_filt = df[df['gscore'] <= gscore_thr_list[outer-1]]
+            df_outer = df_filt[df_filt['outer'] == outer]
+            smiles = df_outer['SMILES'].tolist()
+            ids = df_outer['id'].tolist()
+            mol_list = [mol.Mol(smile=smile, name=ids[i]) for i, smile in enumerate(smiles)]
+            outer_db = moldb.MolDB(molList=mol_list)
+            scaffold_db = get_scaffolds_db(outer_db)
+            all_scaff_mols.extend(scaffold_db.mols)
+            scaffold_db = moldb.MolDB(molList=all_scaff_mols)
+            scaffold_db._get_similarity_matrix()
+            simmatrix = scaffold_db.simmatrix
+            
+        clustering = DBSCAN(metric="precomputed",
+                            eps=1-similarity_thr,
+                            min_samples=1)
+        clustering.fit(1-simmatrix)
+        counter = Counter(clustering.labels_)
+        num_clusters.append(len(counter.keys()))
+        x_values.append(outer)
+        
+    return num_clusters, x_values
+
+def plot_cluster_DBSCAN_variable_gscore_thresholds(csv_results,
+                                                smi_specific,
+                                                gscore_thr_list,
+                                                similarity_thr_list,
+                                                outname):
+    plt.figure(figsize=(8,6), dpi=200)
+    for sim_thr in similarity_thr_list:
+        num_clusters, x_values = cluster_DBSCAN_variable_gscore_thresholds(csv_results=csv_results,
+                                                                          smi_specific=smi_specific,
+                                                                          gscore_thr_list=gscore_thr_list,
+                                                                          similarity_thr=sim_thr)
+        plt.plot(x_values, num_clusters, label='DBSCAN eps=%.2f'%sim_thr, marker='o')
+    plt.xlabel('Outer loop')
+    plt.ylabel('DBSCAN scaffolds clusters')
+    plt.title('Scaffold evolution along outer loops with variable gscore thresholds')
+    plt.legend()
+    plt.savefig(outname+'.pdf')
+    
+    # Save the clustering data to a CSV file
+    clustering_data = []
+    for sim_thr in similarity_thr_list:
+        num_clusters, x_values = cluster_DBSCAN_variable_gscore_thresholds(csv_results=csv_results,
+                                                                          smi_specific=smi_specific,
+                                                                          gscore_thr_list=gscore_thr_list,
+                                                                          similarity_thr=sim_thr)
+        for x, num in zip(x_values, num_clusters):
+            clustering_data.append({'Similarity Threshold': sim_thr, 
+                                    'Outer Loop': x, 
+                                    'Num Clusters': num})
+    clustering_df = pd.DataFrame(clustering_data)
+    clustering_df.to_csv(outname+'_variable_gscore_clustering_data.csv', index=False)
+    
+
 def cluster_DBSCAN_multitarget(csv_results,
                    smi_specific,
                    gscore_glob_thr,
@@ -331,12 +410,12 @@ def plot_cluster_DBSCAN_multitarget(csv_results,
     plt.figure(figsize=(10,6), dpi=500)
     for sim_thr in similarity_thrs:
         print(sim_thr)
-        num_clusters, x_values = cluster_DBSCAN(csv_results=csv_results,
-                                                smi_specific=smi_specific,
-                                                gscore_glob_thr=gscore_glob_thr,
-                                                gscore_ind_thr=gscore_ind_thr,
-                                                tanimoto_thr=tanimoto_thr,
-                                                similarity_thr=sim_thr)
+        num_clusters, x_values = cluster_DBSCAN_multitarget(csv_results=csv_results,
+                                                            smi_specific=smi_specific,
+                                                            gscore_glob_thr=gscore_glob_thr,
+                                                            gscore_ind_thr=gscore_ind_thr,
+                                                            tanimoto_thr=tanimoto_thr,
+                                                            similarity_thr=sim_thr)
         print(num_clusters, x_values)
         plt.plot(x_values, num_clusters, label='DBSCAN eps=%.2f'%sim_thr, marker='o')
     plt.xlabel('Affinity AL Cycle')
@@ -411,12 +490,12 @@ def plot_new_scaffolds_multitarget(csv_results,
                        outname):
     plt.figure()
     for sim_thr in similarity_thrs:
-        percs, x_values = new_scaffolds(csv_results=csv_results,
-                                        smi_specific=smi_specific,
-                                        gscore_glob_thr=gscore_glob_thr,
-                                        gscore_ind_thr=gscore_ind_thr,
-                                        tanimoto_thr=tanimoto_thr,
-                                        similarity_thr=sim_thr)
+        percs, x_values = new_scaffolds_multitarget(csv_results=csv_results,
+                                                    smi_specific=smi_specific,
+                                                    gscore_glob_thr=gscore_glob_thr,
+                                                    gscore_ind_thr=gscore_ind_thr,
+                                                    tanimoto_thr=tanimoto_thr,
+                                                    similarity_thr=sim_thr)
         plt.plot(x_values, percs, label='sim. thrs. = %.2f'%sim_thr, marker='o')
     plt.xlabel('Outer loop')
     plt.ylabel('/% of scaffolds with a similarity to all \n previous generated molecules < sim. thrs.')
