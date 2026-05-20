@@ -32,7 +32,7 @@ def create_df_gscore_vs_tanimoto(files_dir, specific_set, virus='global', target
     files2 = glob.glob('%s/glide_??/docking/%s_%s_best.csv'%(files_dir,virus,target))
     files2.sort()
     files = files + files2
-    #files = files[1:] # not glide0
+    files = [file for file in files if 'glide_0' not in file] # not glide 0
 
     for i, csv_file in enumerate(files):
         outer_round = i+1
