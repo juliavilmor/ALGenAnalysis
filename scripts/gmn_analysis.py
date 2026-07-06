@@ -9,30 +9,16 @@ import seaborn as sns
 from rdkit import Chem
 from collections import Counter
 from statistics import mean
-
-
-########## GENAI BLOCK ###########
-
 def join_all_molecule_files(results_dir, file_names_to_join):
-    """ It joins all files with the same name.
-        Ex: Join all threshold files from trial_x folders"""
+    files = glob.glob('%s/*/%s*.csv' % (results_dir, file_names_to_join))
+    if not files:
+        return None
 
-    # get all molecule smiles
-    smiles_list = []
-    results = glob.glob('%s/*'%results_dir)
-    for result in results:
-       trial = glob.glob('%s/*'%result)
-       for tfile in trial:
-           nfile = os.path.basename(tfile)
-           if file_names_to_join not in nfile: continue
-           file_to_read = pd.read_csv(tfile)
-           smiles = file_to_read['smiles'].values.tolist()
-           smiles_list.extend(smiles)
-    # save into new file
-    new_file = open('%s/all_%s.smi'%(results_dir, file_names_to_join), 'w')
-    for smile in smiles_list:
-        new_file.write('%s\n'%smile)
-    new_file.close()
+    dfs = [pd.read_csv(file) for file in files]
+    out_df = pd.concat(dfs, ignore_index=True)
+    out_file = '%s/all_%s.csv' % (results_dir, file_names_to_join)
+    out_df.to_csv(out_file, index=False)
+    return out_file
 
 def create_table_gmn_counts(results_dir, save_df=False):
     """It creates a table of the gmn results for each round.

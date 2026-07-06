@@ -218,34 +218,26 @@ def filter_by_glide_gscore_paninhibitors(list_of_csvs, outdir, gscore_global=-6.
         df['virus'] = virus
         df['receptor'] = receptor
         list_dfs.append(df)
-        gscores = df['r_i_docking_score'].tolist()
-        #plt.hist(gscores, bins=15, alpha=0.5)
-        #plt.axvline(x = -5.9, color = 'r')
-        #plt.savefig('hist_gscores.png')
     all_df = pd.concat(list_dfs)
-    ligs = all_df['title'].tolist()
-    ligs = set(ligs)
-    mean = {}
+    ligs = set(all_df['title'].tolist())
+    selected = {}
     for lig in ligs:
         # global threshold
-        mean_gscore = all_df.loc[all_df['title'] == lig]['r_i_docking_score'].mean()
-        if mean_gscore < gscore_global:
-
-            # individual threshold
-            ind_gscore = all_df.loc[all_df['title'] == lig]['r_i_docking_score'] < gscore_individual
-            below = ind_gscore.tolist()
-            if below == [True, True, True]:
-                mean[lig] = mean_gscore
-                smiles = all_df.loc[all_df['title'] == lig]['SMILES'].tolist()[0]
-                if not os.path.exists(outdir):
-                    os.mkdir(outdir)
-                smi_file = open('%s/specific_set.smi'%outdir, 'a')
+        lig_df = all_df.loc[all_df['title'] == lig]
+        mean_gscore = lig_df['r_i_docking_score'].mean()
+        if mean_gscore <= gscore_global:
+            per_source_scores = lig_df.groupby(['virus', 'receptor'])['r_i_docking_score'].mean()
+            if len(per_source_scores) == len(list_of_csvs) and (per_source_scores <= gscore_individual).all():
+                selected[lig] = mean_gscore
+                smiles = lig_df['SMILES'].tolist()[0]
+                os.makedirs(outdir, exist_ok=True)
+                smi_file = open('%s/genai_specific_set.smi'%outdir, 'a')
                 smi_file.write('%s\n'%smiles)
                 smi_file.close()
-    print('From %s molecules, %s were removed.\nThe new set contains %s molecules'%(len(ligs), (len(ligs) - len(mean)), len(mean)))
+    print('From %s molecules, %s were removed.\nThe new set contains %s molecules'%(len(ligs), (len(ligs) - len(selected)), len(selected)))
     
     # return the number of filtrated molecules
-    return len(mean)
+    return len(selected)
 
 def cumulative_histograms(final_csvs, initial_csvs, list_of_labels, list_of_colors, insert_title, out, savefig=True, legend_loc='upper right', xlim=None, ylim=None):
     
