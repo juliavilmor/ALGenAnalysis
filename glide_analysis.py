@@ -214,7 +214,7 @@ def filter_by_glide_gscore_paninhibitors(list_of_csvs, outdir, gscore_global=-6.
         receptor = os.path.basename(glide).split('_')[2]
         df = pd.read_csv(glide)
         df = df[df['r_i_docking_score'] != 10000]
-        df = df.drop_duplicates(subset='title')
+        #df = df.drop_duplicates(subset='title')
         df['virus'] = virus
         df['receptor'] = receptor
         list_dfs.append(df)
@@ -222,12 +222,12 @@ def filter_by_glide_gscore_paninhibitors(list_of_csvs, outdir, gscore_global=-6.
     ligs = set(all_df['title'].tolist())
     selected = {}
     for lig in ligs:
-        # global threshold
         lig_df = all_df.loc[all_df['title'] == lig]
         mean_gscore = lig_df['r_i_docking_score'].mean()
         if mean_gscore <= gscore_global:
-            per_source_scores = lig_df.groupby(['virus', 'receptor'])['r_i_docking_score'].mean()
-            if len(per_source_scores) == len(list_of_csvs) and (per_source_scores <= gscore_individual).all():
+            source_labels = lig_df[['virus', 'receptor']].drop_duplicates()
+            source_scores = lig_df['r_i_docking_score']
+            if len(source_labels) == len(list_of_csvs) and (source_scores <= gscore_individual).all():
                 selected[lig] = mean_gscore
                 smiles = lig_df['SMILES'].tolist()[0]
                 os.makedirs(outdir, exist_ok=True)
